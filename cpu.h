@@ -137,6 +137,9 @@ struct CPU {
     BYTE    running;
 };
 
-
+// Functions
+void run(struct CPU* cpu);
+void execute(struct CPU* cpu);
+void init_cpu(struct CPU* cpu);
 
 #endif

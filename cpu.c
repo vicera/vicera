@@ -91,6 +91,12 @@ BYTE *get_register(struct CPU* cpu, int reg)
         die("Invalid register.");
 }
 
+void update_flags(struct CPU* cpu, BYTE before, BYTE after)
+{
+    // TODO: Add carry flag support.
+    cpu->flags |= (after == 0x00) * Z_FLAG;
+}
+
 // struct CPU -> None
 // inits the CPU
 void init_cpu(struct CPU *cpu)
@@ -100,8 +106,10 @@ void init_cpu(struct CPU *cpu)
     
     for (i = 0; i < 0x10000; ++i)
         cpu->memory[i] = 0x0;   // Filling the memory with zeros
+    for (i = 0; i < REGSIZE; ++i)
+        cpu->registers[i] = 0x0; // Filling the registers with zeros
     cpu->pc = 0x0000;           // BIOS Location
-    cpu->sp = 0xbfff;           // Stack pointer at top of RAM
+    cpu->sp = 0xffff;           // Stack pointer at top of RAM
     cpu->flags = 0x00;          // Flags
     cpu->running = 0x00;        // is it running?
 
@@ -271,7 +279,7 @@ void mem_jump(struct CPU* cpu, int type, WORD addr)
         case 2:     // jn
             b = !(Z_FLAG & cpu->flags);
             break;
-        default:
+        default:    // jp
             b = 1;
             break;
     }
@@ -304,17 +312,22 @@ void dump_registers(struct CPU* cpu)
 
     pwarn("-- REGISTER DUMP --");
     for (i = 0; i < REGSIZE; ++i)
-        printf("Register %2x = %2x", i, cpu->registers[i]);
+        fprintf(stderr, "Register %2x = %02x\n", i, cpu->registers[i]);
+    fprintf(stderr, "\n");
     pwarn("-- END OF DUMP --");
 }
 
 // dump 16 bytes of memory
 void dump_memory(struct CPU* cpu, WORD start)
 {
-    int i;
+    WORD i;
     pwarn("-- MEMORY DUMP --");
-    for (i = 0; i < 0x10; ++i)
-        printf("%2x ", cpu->memory[start + i]);
+
+    fprintf(stderr, "0x%04x ", start);
+    for (i = 0; i < 0x10; i++)
+        fprintf(stderr, "%02x ", cpu->memory[start + i]);
+    fprintf(stderr, "\n");
+    
     pwarn("-- END OF DUMP --");
 }
 
@@ -327,7 +340,7 @@ void execute(struct CPU *cpu)
     switch (instr)
     {
         case HALT:
-            printf("System halt at %4x.\n", cpu->pc);
+            fprintf(stderr, "System halt at %4x.\n", cpu->pc);
             halt(cpu, "System halted!");
             break;
         case NOP:
@@ -432,6 +445,16 @@ void execute(struct CPU *cpu)
             mov_rr(cpu, instr - MOV_AP, REG_HL);
             break;
 
+        case MOV_PA:
+        case MOV_PB:
+        case MOV_PC:
+        case MOV_PD:
+        case MOV_PE:
+        case MOV_PH:
+        case MOV_PL:
+            mov_rr(cpu, REG_HL, instr - MOV_PA);
+            break;
+
         case ADD_A:
         case ADD_B:
         case ADD_C:
@@ -442,7 +465,7 @@ void execute(struct CPU *cpu)
             add_r(cpu, instr - ADD_A);
             break;
         case ADD_N:
-            add_n(cpu, cpu->memory[(cpu->pc)++]);
+            add_n(cpu, cpu->memory[++(cpu->pc)]);
             break;
         case ADD_P:
             add_r(cpu, REG_HL);
@@ -458,7 +481,7 @@ void execute(struct CPU *cpu)
             sub_r(cpu, instr - SUB_A);
             break;
         case SUB_N:
-            sub_n(cpu, cpu->memory[(cpu->pc)++]);
+            sub_n(cpu, cpu->memory[++(cpu->pc)]);
             break;
         case SUB_P:
             sub_r(cpu, REG_HL);
@@ -474,7 +497,7 @@ void execute(struct CPU *cpu)
             and_r(cpu, instr - AND_A);
             break;
         case AND_N:
-            and_n(cpu, cpu->memory[(cpu->pc)++]);
+            and_n(cpu, cpu->memory[++(cpu->pc)]);
             break;
         case AND_P:
             and_r(cpu, REG_HL);
@@ -490,7 +513,7 @@ void execute(struct CPU *cpu)
             or_r(cpu, instr - OR_A);
             break;
         case OR_N:
-            or_n(cpu, cpu->memory[(cpu->pc)++]);
+            or_n(cpu, cpu->memory[++(cpu->pc)]);
             break;
         case OR_P:
             or_r(cpu, REG_HL);
@@ -506,7 +529,7 @@ void execute(struct CPU *cpu)
             xor_r(cpu, instr - XOR_A);
             break;
         case XOR_N:
-            xor_n(cpu, cpu->memory[(cpu->pc)++]);
+            xor_n(cpu, cpu->memory[++(cpu->pc)]);
             break;
         case XOR_P:
             xor_r(cpu, REG_HL);
@@ -612,7 +635,7 @@ void execute(struct CPU *cpu)
             dump_registers(cpu);
             break;
         case DUMP_M:
-            dump_memory(cpu, cpu->memory[++cpu->pc]);
+            dump_memory(cpu, btoword(cpu->memory[++cpu->pc], cpu->memory[++cpu->pc]));
             break;
 
         default:
@@ -626,9 +649,13 @@ void execute(struct CPU *cpu)
 // Run code from the Program Counter
 void run(struct CPU *cpu)
 {
+    cpu->running = 1;
+
+    plog("Beginning code execution.");
     while (cpu->running)
     {
         execute(cpu);
         ++(cpu->pc);
     }
+    plog("Execution ended.");
 }
