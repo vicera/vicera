@@ -13,6 +13,10 @@ typedef enum {
     ARG_RP
 } Args;
 
+// Misc
+#define Z_FLAG  0x01
+#define C_FLAG  0x02
+
 // Instructions
 typedef enum {
     HALT,

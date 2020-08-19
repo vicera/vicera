@@ -10,8 +10,6 @@
 #include "logging.h"
 
 #define FNAME   "cpu.c"
-#define Z_FLAG  0x01
-#define C_FLAG  0x02
 
 #define JC      0
 #define JZ      1
@@ -247,16 +245,15 @@ WORD stack_pop(struct CPU* cpu)
 void stack_pop_p(struct CPU* cpu)
 {
     WORD pop = stack_pop(cpu);
-    cpu->memory[REG_H] = pop / 0x100;
-    cpu->memory[REG_L] = pop % 0x100;
+    cpu->registers[REG_H] = pop / 0x100;
+    cpu->registers[REG_L] = pop % 0x100;
 }
 
 // push
 void stack_push(struct CPU* cpu, WORD word_a)
 {
-    WORD pop = stack_pop(cpu);
-    cpu->memory[(cpu->sp)--] = pop % 0x100;
-    cpu->memory[(cpu->sp)--] = pop / 0x100;
+    cpu->memory[(cpu->sp)--] = word_a % 0x100;
+    cpu->memory[(cpu->sp)--] = word_a / 0x100;
 }
 
 void stack_push_p(struct CPU* cpu)
@@ -265,7 +262,7 @@ void stack_push_p(struct CPU* cpu)
 }
 
 // jump
-void mem_jump(struct CPU* cpu, int type, WORD addr)
+int mem_jump(struct CPU* cpu, int type, WORD addr)
 {
     int b;
     switch (type)
@@ -287,14 +284,30 @@ void mem_jump(struct CPU* cpu, int type, WORD addr)
     if (b)
     {
         cpu->pc = addr - 1;
-    }
+        return 0;
+    } 
+    else
+        return 1;
 }
 
 // call
-void mem_call(struct CPU* cpu, WORD addr)
+int mem_call(struct CPU* cpu, WORD addr)
 {
-    mem_jump(cpu, -1, addr);
     stack_push(cpu, cpu->pc);
+    mem_jump(cpu, -1, addr);
+}
+
+// call HL
+void mem_call_p(struct CPU* cpu)
+{
+    mem_call(cpu, btoword(cpu->registers[REG_H], cpu->registers[REG_L]));
+}
+
+// call nn
+void mem_call_nn(struct CPU* cpu, WORD addr)
+{
+    cpu->pc += 2;
+    mem_call(cpu, addr);
 }
 
 // ret
@@ -336,6 +349,7 @@ void dump_memory(struct CPU* cpu, WORD start)
 void execute(struct CPU *cpu)
 {
     BYTE instr = cpu->memory[cpu->pc];
+    int jmpret = 0;
 
     switch (instr)
     {
@@ -562,7 +576,7 @@ void execute(struct CPU *cpu)
         case SL_E:
         case SL_H:
         case SL_L:
-            inc_r(cpu, instr - SL_A);
+            sl_r(cpu, instr - SL_A);
             break;
 
         case SR_A:
@@ -593,38 +607,38 @@ void execute(struct CPU *cpu)
             cp_r(cpu, instr - REG_HL);
 
         case JP_NN:
-            mem_jump(cpu, -1, btoword(cpu->memory[++cpu->pc], cpu->memory[++cpu->pc]));
+            jmpret = mem_jump(cpu, -1, btoword(cpu->memory[cpu->pc + 1], cpu->memory[cpu->pc + 2]));
             break;
         case JP_P:
             mem_jump(cpu, -1, btoword(cpu->registers[REG_H], cpu->registers[REG_L]));
             break;
 
         case JC_NN:
-            mem_jump(cpu, JC, btoword(cpu->memory[++cpu->pc], cpu->memory[++cpu->pc]));
+            jmpret = mem_jump(cpu, JC, btoword(cpu->memory[cpu->pc + 1], cpu->memory[cpu->pc + 2]));
             break;
         case JC_P:
             mem_jump(cpu, JC, btoword(cpu->registers[REG_H], cpu->registers[REG_L]));
             break;
 
         case JZ_NN:
-            mem_jump(cpu, JZ, btoword(cpu->memory[++cpu->pc], cpu->memory[++cpu->pc]));
+            jmpret = mem_jump(cpu, JZ, btoword(cpu->memory[cpu->pc + 1], cpu->memory[cpu->pc + 2]));
             break;
         case JZ_P:
             mem_jump(cpu, JZ, btoword(cpu->registers[REG_H], cpu->registers[REG_L]));
             break;
 
         case JN_NN:
-            mem_jump(cpu, JNZ, btoword(cpu->memory[++cpu->pc], cpu->memory[++cpu->pc]));
+            jmpret = mem_jump(cpu, JNZ, btoword(cpu->memory[cpu->pc + 1], cpu->memory[cpu->pc + 2]));
             break;
         case JN_P:
             mem_jump(cpu, JNZ, btoword(cpu->registers[REG_H], cpu->registers[REG_L]));
             break;
     
         case CALL_NN:
-            mem_call(cpu, btoword(cpu->memory[++cpu->pc], cpu->memory[++cpu->pc]));
+            mem_call_nn(cpu, btoword(cpu->memory[cpu->pc + 1], cpu->memory[cpu->pc + 2]));
             break;
         case CALL_P:
-            mem_call(cpu, btoword(cpu->registers[REG_H], cpu->registers[REG_L]));
+            mem_call_p(cpu);
             break;
 
         case RET:
@@ -635,7 +649,8 @@ void execute(struct CPU *cpu)
             dump_registers(cpu);
             break;
         case DUMP_M:
-            dump_memory(cpu, btoword(cpu->memory[++cpu->pc], cpu->memory[++cpu->pc]));
+            dump_memory(cpu, btoword(cpu->memory[cpu->pc + 1], cpu->memory[cpu->pc + 2]));
+            jmpret = 1;
             break;
 
         default:
@@ -643,6 +658,9 @@ void execute(struct CPU *cpu)
             halt(cpu, "Invalid opcode! Stopping...");
             break;
     }
+    
+    if (jmpret)
+        cpu->pc += 2;
 }
 
 // struct CPU -> None
