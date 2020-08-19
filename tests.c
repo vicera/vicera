@@ -29,13 +29,23 @@
 
 struct CPU system;
 
-void load_program(struct CPU *cpu, const int *program)
+void load_program_at(struct CPU *cpu, const int *program, WORD at)
 {
     size_t i;
-
     for (i = 0; program[i] != EOF; ++i)
-        cpu->memory[i] = program[i];
+        cpu->memory[i + at] = program[i];
 }
+
+void load_program(struct CPU *cpu, const int *program)
+{
+    load_program_at(cpu, program, 0x0000);
+}
+
+/*
+ * =================
+ *    MOV OPCODES
+ * =================
+ */
 
 void mov_opcodes_rn()
 {
@@ -189,7 +199,7 @@ void mov_opcodes_pr()
         MOV_PD, INC_L,
         MOV_PE, INC_L,
 
-        DUMP_M, 0x00, 0xff,
+        DUMP_M, 0xff, 0x00,
         HALT,
         -1
     };
@@ -204,9 +214,292 @@ void mov_opcodes_pr()
         assert_int_equal(system.memory[0xff00 + i], results[i]);
 }
 
-void math_opcodes(void **state)
+/*
+ * ====================
+ *  ARITHMEIC OPCODES
+ * ====================
+ */
+
+void math_opcodes_add()
 {
-    assert_true(1);
+    /*
+     * add A, r
+     * add A, n
+     * add A, (HL)
+     */
+    system.pc = 0x0000;
+
+    // add A, r
+    const int program_r[] = {
+        MOV_AN, 0x00,
+        MOV_BN, 0x01,
+        MOV_CN, 0x02,
+        MOV_DN, 0x04,
+        MOV_EN, 0x08,
+        MOV_HN, 0x10,
+        MOV_LN, 0x20,
+
+        ADD_B, ADD_C, ADD_D, ADD_E, ADD_H, ADD_L,
+        HALT, -1
+    };
+
+    load_program(&system, program_r);
+    run(&system);
+
+    assert_int_equal(system.registers[REG_A], 0x3f);
+
+    // add A, n
+    system.pc = 0x0000;
+    const int program_n[] = {
+        MOV_AN, 0x10,
+        ADD_N, 0x0a,
+
+        HALT, -1
+    };
+
+    load_program(&system, program_n);
+    run(&system);
+
+    assert_int_equal(system.registers[REG_A], 0x1a);
+
+    // add A, (HL)
+    system.pc = 0x0000;
+    system.memory[0x1234] = 0x0e;
+    const int program_p[] = {
+        MOV_AN, 0x20,
+        MOV_HN, 0x12,
+        MOV_LN, 0x34,
+        ADD_P,
+
+        HALT, -1
+    };
+
+    load_program(&system, program_p);
+    run(&system);
+
+    assert_int_equal(system.registers[REG_A], 0x2e);
+}
+
+void math_opcodes_inc_dec()
+{
+    int i;
+    /*
+     * inc r
+     * dec r
+     */
+    
+    init_cpu(&system);
+
+    const int program[] = 
+    {
+        INC_A, DEC_A,
+        INC_B, DEC_B,
+        INC_C, DEC_C,
+        INC_D, DEC_D,
+        INC_E, DEC_E,
+        INC_H, DEC_H,
+        INC_L, DEC_L,
+
+        HALT, -1
+    };
+
+    for (i = 0; i < REGSIZE; ++i)
+        assert_int_equal(system.registers[i], 0x00);
+}
+
+/*
+ * Stack operations
+ */
+void stack_opcodes()
+{
+    /*
+     * Epic stack moment
+     */
+
+    system.sp = 0xffff;
+    system.pc = 0x0000;
+    const int program[] =
+    {
+        MOV_HN, 0xde,
+        MOV_LN, 0xad,
+        PUSH,
+        MOV_HN, 0xbe,
+        MOV_LN, 0xef,
+        PUSH,
+        
+        DUMP_M, 0xff, 0xf0,
+        POP, POP,
+        HALT, -1
+    };
+
+    load_program(&system, program);
+    run(&system);
+
+    assert_int_equal(system.registers[REG_H], 0xde);
+    assert_int_equal(system.registers[REG_L], 0xad);
+}
+
+/*
+ * Jumping, Conditions and Subroutines
+ */
+
+void jumping_opcodes()
+{
+    int i;
+    /*
+     * jp nn
+     * jp (HL)
+     */
+
+    const int program_1[] =
+    {
+        JP_NN, 0xde, 0xad,
+        HALT, -1
+    };
+    const int program_2[] =
+    {
+        MOV_HN, 0xbe,
+        MOV_LN, 0xef,
+        JP_P,
+
+        HALT, -1
+    };
+    const int *programs[] =
+    {
+        program_1, program_2
+    };
+    const WORD results[] =
+    {
+        0xdead, 0xbeef
+    };
+    
+    system.memory[0xdead] = HALT;
+    system.memory[0xbeef] = HALT;
+
+    for (i = 0; i < 2; ++i)
+    {
+        system.pc = 0x0000;
+        load_program(&system, programs[i]);
+        run(&system);
+
+        assert_int_equal(system.pc, results[i] + 1);
+    }
+}
+
+void jumping_opcodes_cond()
+{
+    int i;
+    /*
+     * jc nn
+     * jc (HL)
+     * jz nn
+     * jz (HL)
+     * jnz nn
+     * jnz (HL)
+     */
+    
+    init_cpu(&system);
+
+    const int program_1[] =
+    {
+        MOV_AN, 0x00,
+        JZ_NN, 0xde, 0xad,
+        
+        MOV_AN, 0x01,
+        HALT, -1
+    };
+    const int program_2[] =
+    {
+        MOV_AN, 0x00,
+        MOV_HN, 0xbe,
+        MOV_LN, 0xef,
+        JZ_P,
+
+        MOV_AN, 0x01,
+        HALT, -1
+    };
+    
+    system.flags = Z_FLAG;
+    for (i = 0; i < 4; ++i)
+    {
+        system.pc = 0x0000;
+        if (i < 2)
+            load_program(&system, program_1);
+        else
+            load_program(&system, program_2);
+        run(&system);
+
+        switch (i)
+        {
+            case 0:
+                assert_int_equal(system.pc, 0xdead + 1);
+                system.flags = 0x00;
+                break;
+            case 1: 
+                assert_int_equal(system.registers[REG_A], 0x01);
+                system.flags = Z_FLAG;
+                break;
+
+            case 2:
+                assert_int_equal(system.pc, 0xbeef + 1);
+                system.flags = 0x00;
+                break;
+            case 3:
+                assert_int_equal(system.registers[REG_A], 0x01);
+                break;
+        }
+    }
+}
+
+void conditions()
+{
+    /*
+     * cp A, r
+     * cp A, (HL)
+     * cp A, n
+     */
+
+    // TODO: Make tests
+}
+
+void subroutines()
+{
+    /*
+     * call nn
+     * call (HL)
+     * ret
+     */
+    init_cpu(&system);
+
+    // at 0x0000
+    const int program_1[] = {
+        // test 1
+        CALL_NN, 0xde, 0xad,
+
+        MOV_HN, 0xbe,
+        MOV_LN, 0xef,
+        CALL_P,
+
+        HALT, -1
+    };
+    // at 0xdead
+    const int program_2[] = {
+        MOV_AN, 0x01,
+        RET
+    };
+    // at 0xbeef
+    const int program_3[] = {
+        MOV_BN, 0x01,
+        RET
+    };
+
+    load_program(&system, program_1);
+    load_program_at(&system, program_2, 0xdead);
+    load_program_at(&system, program_3, 0xbeef);
+    run(&system);
+
+    assert_int_equal(system.registers[REG_A], 0x01);
+    assert_int_equal(system.registers[REG_B], 0x01);
 }
 
 int main()
@@ -219,7 +512,18 @@ int main()
         cmocka_unit_test(mov_opcodes_rr),
         cmocka_unit_test(mov_opcodes_rp),
         cmocka_unit_test(mov_opcodes_pr),
-        cmocka_unit_test(math_opcodes),
+
+        cmocka_unit_test(math_opcodes_add),
+        cmocka_unit_test(math_opcodes_inc_dec),
+
+        cmocka_unit_test(stack_opcodes),
+
+        cmocka_unit_test(jumping_opcodes),
+        cmocka_unit_test(jumping_opcodes_cond),
+
+        cmocka_unit_test(conditions),
+
+        cmocka_unit_test(subroutines)
     };
     
     return cmocka_run_group_tests(tests, NULL, NULL);
