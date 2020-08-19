@@ -604,7 +604,8 @@ void execute(struct CPU *cpu)
             // cp_n(cpu, cpu->memory[++cpu->pc]);
             break;
         case CP_P:
-            cp_r(cpu, instr - REG_HL);
+            cp_r(cpu, REG_HL);
+            break;
 
         case JP_NN:
             jmpret = mem_jump(cpu, -1, btoword(cpu->memory[cpu->pc + 1], cpu->memory[cpu->pc + 2]));
@@ -654,7 +655,7 @@ void execute(struct CPU *cpu)
             break;
 
         default:
-            printf("Halting at 0x%4x...\n", cpu->pc);
+            printf("Halting at 0x%04x...\n", cpu->pc);
             halt(cpu, "Invalid opcode! Stopping...");
             break;
     }
