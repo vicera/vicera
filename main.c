@@ -11,19 +11,13 @@
 
 #define FNAME "main.c"
 
-const BYTE program[] = {
-    // TODO: Make a program to test all the opcodes.
-    MOV_AN, 0x42,
-    MOV_BA, MOV_CB,
-    MOV_BN, 0x01,
-    ADD_B,
-    DUMP_M, 0x0000,
+const int program[] = {
+    MOV_HN, 0xfe,
+    MOV_LN, 0xff,
+
+    INC_HL,
     DUMP_R,
-    MOV_AN, 0x00,
-    MOV_BA, MOV_CA, MOV_DA, MOV_EA, MOV_HA, MOV_LA,
-    DUMP_R,
-    HALT,
-    0xff
+    HALT, -1
 };
 
 int main()
@@ -38,7 +32,7 @@ int main()
     init_cpu(&system);
 
     system.pc = 0x0000;
-    for (int i = 0; program[i] != 0xff; ++i)
+    for (int i = 0; program[i] != EOF; ++i)
         system.memory[i] = program[i];
     
     run(&system);

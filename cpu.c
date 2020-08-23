@@ -73,6 +73,27 @@ WORD btoword(BYTE byte_a, BYTE byte_b)
     return (byte_a * 0x100) + byte_b;
 }
 
+// BYTE *h, BYTE *l -> None
+// Points a 16-bits register (HL, AB, CD)
+void get_16reg(struct CPU* cpu, int reg_a, 
+               BYTE *h, BYTE *l);
+{
+    switch (reg_a)
+    {
+        case REG_HL:
+            h = &(cpu->registers[REG_H]);
+            l = &(cpu->registers[REG_L]);
+            break;
+        case REG_BC:
+            h = &(cpu->registers[REG_B]);
+            l = &(cpu->registers[REG_C]);
+            break;
+        case REG_DE:
+            h = &(cpu->registers[REG_D]);
+            l = &(cpu->registers[REG_E]);
+            break;
+    }
+}
 
 // struct CPU, Integer -> Integer
 // If the register is not a thing, return -1
@@ -80,9 +101,11 @@ BYTE *get_register(struct CPU* cpu, int reg)
 {
     if (reg >= 0 && reg < REGSIZE)
         return &(cpu->registers[reg]);
-    else if (reg == REG_HL)
+    else if (reg >= REG_HL && reg <= REG_DE)
     {
-        WORD addr = btoword(cpu->registers[REG_H], cpu->registers[REG_L]);
+        BYTE *h, *l;
+        get_16reg(cpu, reg, h, l);
+        WORD addr = btoword(*h, *l);
         return &(cpu->memory[addr]);
     }
     else
@@ -94,6 +117,7 @@ void update_flags(struct CPU* cpu, BYTE before, BYTE after)
     // TODO: Add carry flag support.
     cpu->flags |= (after == 0x00) * Z_FLAG;
 }
+
 
 // struct CPU -> None
 // inits the CPU
@@ -132,6 +156,23 @@ void mov_rr(struct CPU* cpu, int reg_a, int reg_b)
     BYTE *rb = get_register(cpu, reg_b);
 
     *ra = *rb;
+}
+
+// mov A, nn
+void mov_ann(struct CPU* cpu, WORD addr)
+{
+    cpu->registers[REG_A] = cpu->memory[addr];
+}
+// mov nn, A
+void mov_nna(struct CPU* cpu, WORD addr)
+{
+    cpu->memory[addr] = cpu->registers[REG_A];
+}
+
+// mov SP, nn
+void mov_sp(struct CPU* cpu, WORD addr)
+{
+    cpu->sp = addr;
 }
 
 // add r
@@ -199,16 +240,34 @@ void xor_n(struct CPU* cpu, BYTE byte_a)
     cpu->registers[REG_A] ^= byte_a;
 }
 
-// inc
+// inc r
 void inc_r(struct CPU* cpu, int reg_a)
 {
     cpu->registers[reg_a]++;
 }
+// inc rr
+void inc_rr(struct CPU *cpu, int reg_a)
+{
+    BYTE *h, *l;
+    get_16reg(cpu, reg_a, h, l);
 
-// dec
+    if (++(*l) == 0x00)
+        (*h)++;
+}
+
+// dec r
 void dec_r(struct CPU* cpu, int reg_a)
 {
     cpu->registers[reg_a]--;
+}
+// dec rr
+void dec_rr(struct CPU* cpu)
+{
+    BYTE *h, *l;
+    get_16reg(cpu, reg_a, h, l);
+
+    if (--(*l) == 0xff)
+        (*h)--;
 }
 
 // sl r
@@ -242,11 +301,12 @@ WORD stack_pop(struct CPU* cpu)
     return btoword(h, l);
 }
 
-void stack_pop_p(struct CPU* cpu)
+void stack_pop_p(struct CPU* cpu, int reg_a)
 {
+
     WORD pop = stack_pop(cpu);
-    cpu->registers[REG_H] = pop / 0x100;
-    cpu->registers[REG_L] = pop % 0x100;
+    *h = pop / 0x100;
+    *l = pop % 0x100;
 }
 
 // push
@@ -256,9 +316,12 @@ void stack_push(struct CPU* cpu, WORD word_a)
     cpu->memory[(cpu->sp)--] = word_a / 0x100;
 }
 
-void stack_push_p(struct CPU* cpu)
+void stack_push_p(struct CPU* cpu, int reg_a)
 {
-    stack_push(cpu, btoword(cpu->registers[REG_H], cpu->registers[REG_L]));
+    BYTE *h, *l;
+    get_16reg(cpu, reg_a, h, l);
+
+    stack_push(cpu, btoword(*h, *l));
 }
 
 // jump
@@ -361,10 +424,14 @@ void execute(struct CPU *cpu)
             break;
         
         // Stack commands
-        case PUSH:
+        case PUSH_HL:
+        case PUSH_BC:
+        case PUSH_DE:
             stack_push_p(cpu);
             break;
-        case POP:
+        case POP_HL:
+        case POP_BC:
+        case POP_DE:
             stack_pop_p(cpu);
             break;
 
@@ -468,6 +535,33 @@ void execute(struct CPU *cpu)
         case MOV_PL:
             mov_rr(cpu, REG_HL, instr - MOV_PA);
             break;
+        case MOV_PN:
+            mov_rr(cpu, REG_HL, cpu->memory[++(cpu->pc)]);
+            break;
+
+        case MOV_SPNN:
+            mov_sp(cpu, 
+                   btoword(cpu->memory[cpu->pc + 1], cpu->memory[cpu->pc + 2]));
+            jmpret = 1;
+            break;
+
+        case MOV_ABC:
+        case MOV_ADE:
+            mov_rr(cpu, REG_A, instr - MOV_ABC + REG_AB);
+            break;
+        case MOV_ANN:
+            mov_rr(cpu, REG_A,
+                   btoword(cpu->memory[cpu->pc + 1], cpu->memory[cpu->pc + 2]));
+            jmpret = 1;
+            break;
+
+        case MOV_BCA:
+        case MOV_DEA:
+            mov_rr(cpu, instr - MOV_BCA + REG_AB, REG_A);
+            break;
+        case MOV_NNA:
+
+            break;
 
         case ADD_A:
         case ADD_B:
@@ -558,6 +652,11 @@ void execute(struct CPU *cpu)
         case INC_L:
             inc_r(cpu, instr - INC_A);
             break;
+        case INC_HL:
+        case INC_BC:
+        case INC_DE:
+            inc_rr(cpu, instr - INC_HL + REG_HL);
+            break;
 
         case DEC_A:
         case DEC_B:
@@ -567,6 +666,11 @@ void execute(struct CPU *cpu)
         case DEC_H:
         case DEC_L:
             dec_r(cpu, instr - DEC_A);
+            break;
+        case DEC_HL:
+        case DEC_BC:
+        case DEC_DE:
+            dec_rr(cpu, instr - INC_HL + REG_HL);
             break;
 
         case SL_A:

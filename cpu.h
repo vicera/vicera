@@ -23,8 +23,11 @@ typedef enum {
     NOP,
     
     // Stack operations
-    PUSH,   // Pushes and Pops from HL
-    POP,
+    // push nn
+    PUSH_BC, PUSH_DE, PUSH_HL,
+    
+    // push nn
+    POP_BC, POP_DE, POP_HL,
 
     // MOV operations
     // R = Register, N = Byte, P = (HL)
@@ -44,12 +47,20 @@ typedef enum {
     // mov l, *
     MOV_LA, MOV_LB, MOV_LC, MOV_LD, MOV_LE, MOV_LH, MOV_LL,
     // mov (HL), *
-    MOV_PA, MOV_PB, MOV_PC, MOV_PD, MOV_PE, MOV_PH, MOV_PL,
+    MOV_PA, MOV_PB, MOV_PC, MOV_PD, MOV_PE, MOV_PH, MOV_PL, MOV_PN,
 
     // mov r, n
     MOV_AN, MOV_BN, MOV_CN, MOV_DN, MOV_EN, MOV_HN, MOV_LN,
     // mov r, (HL)
     MOV_AP, MOV_BP, MOV_CP, MOV_DP, MOV_EP, MOV_HP, MOV_LP,
+    
+    // mov SP, nn
+    MOV_SPNN,
+
+    // mov a, (BC/DE/nn)
+    MOV_ABC, MOV_ADE, MOV_ANN,
+    // mov (BC/DE/nn), a
+    MOV_BCA, MOV DEA, MOV_NNA,
 
     // ALU operations
     // ADD
@@ -69,8 +80,10 @@ typedef enum {
 
     // INC
     INC_A, INC_B, INC_C, INC_D, INC_E, INC_H, INC_L, 
+    INC_HL, INC_BC, INC_DE,
     // DEC
     DEC_A, DEC_B, DEC_C, DEC_D, DEC_E, DEC_H, DEC_L, 
+    DEC_HL, DEC_BC, DEC_DE,
 
     // SL (Shift Left)
     SL_A, SL_B, SL_C, SL_D, SL_E, SL_H, SL_L, 
@@ -123,6 +136,8 @@ typedef enum {
     REG_L,
     REGSIZE,
     REG_HL, // (HL)
+    REG_BC, // (BC)
+    REG_DE  // (DE)
 } Registers;
 
 // useful structs
