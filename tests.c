@@ -214,6 +214,58 @@ void mov_opcodes_pr()
         assert_int_equal(system.memory[0xff00 + i], results[i]);
 }
 
+void mov_opcodes_spnn()
+{
+    /*
+     * mov SP, nn
+     */
+
+    const int program[] =
+    {
+        MOV_HLNN, 0x13, 0x37,
+        
+        MOV_SPNN, 0x10, 0x0f,
+        PUSH_HL,
+        MOV_SPNN, 0x20, 0x0f,
+        PUSH_HL,
+
+        DUMP_M, 0x10, 0x00,
+        DUMP_M, 0x20, 0x00,
+        HALT, -1
+    };
+
+    load_program(&system, program);
+    run(&system);
+}
+
+void mov_opcodes_ann_nna()
+{
+    /*
+     * mov A, (nn)
+     * mov (nn), A
+     */
+    init_cpu(&system);
+    system.memory[0xfff1] = 0x37;
+
+    const int program[] = 
+    {
+        MOV_AN, 0x13,
+        MOV_NNA, 0xff, 0xf0,
+
+        MOV_ANN, 0xff, 0xf1,
+        MOV_BA,
+        MOV_ANN, 0xff, 0xf0,
+
+        HALT, -1
+    };
+
+    load_program(&system, program);
+    run(&system);
+
+    assert_int_equal(system.registers[REG_A], 0x13);
+    assert_int_equal(system.registers[REG_B], 0x37);
+}
+
 /*
  * ====================
  *  ARITHMEIC OPCODES
@@ -322,13 +374,14 @@ void stack_opcodes()
     {
         MOV_HN, 0xde,
         MOV_LN, 0xad,
-        PUSH,
+        PUSH_HL,
         MOV_HN, 0xbe,
         MOV_LN, 0xef,
-        PUSH,
+        PUSH_HL,
         
         DUMP_M, 0xff, 0xf0,
-        POP, POP,
+        POP_HL, DUMP_R,
+        POP_HL, DUMP_R,
         HALT, -1
     };
 
@@ -485,12 +538,12 @@ void subroutines()
     // at 0xdead
     const int program_2[] = {
         MOV_AN, 0x01,
-        RET
+        RET, -1
     };
     // at 0xbeef
     const int program_3[] = {
         MOV_BN, 0x01,
-        RET
+        RET, -1
     };
 
     load_program(&system, program_1);
@@ -512,6 +565,9 @@ int main()
         cmocka_unit_test(mov_opcodes_rr),
         cmocka_unit_test(mov_opcodes_rp),
         cmocka_unit_test(mov_opcodes_pr),
+
+        cmocka_unit_test(mov_opcodes_spnn),
+        cmocka_unit_test(mov_opcodes_ann_nna),
 
         cmocka_unit_test(math_opcodes_add),
         cmocka_unit_test(math_opcodes_inc_dec),
