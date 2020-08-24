@@ -5,14 +5,6 @@
 typedef unsigned char BYTE;
 typedef unsigned short int WORD;
 
-// Argument types
-typedef enum {
-    ARG_RN,
-    ARG_RR,
-    ARG_PR,
-    ARG_RP
-} Args;
-
 // Misc
 #define Z_FLAG  0x01
 #define C_FLAG  0x02
@@ -24,10 +16,14 @@ typedef enum {
     
     // Stack operations
     // push nn
-    PUSH_BC, PUSH_DE, PUSH_HL,
+    PUSH_HL, PUSH_BC, PUSH_DE,
+    // pusha
+    PUSHA,
     
     // push nn
-    POP_BC, POP_DE, POP_HL,
+    POP_HL, POP_BC, POP_DE,
+    // popa
+    POPA,
 
     // MOV operations
     // R = Register, N = Byte, P = (HL)
@@ -60,7 +56,10 @@ typedef enum {
     // mov a, (BC/DE/nn)
     MOV_ABC, MOV_ADE, MOV_ANN,
     // mov (BC/DE/nn), a
-    MOV_BCA, MOV DEA, MOV_NNA,
+    MOV_BCA, MOV_DEA, MOV_NNA,
+    
+    // mov BC/DE/HL, nn
+    MOV_HLNN, MOV_BCNN, MOV_DENN,
 
     // ALU operations
     // ADD
