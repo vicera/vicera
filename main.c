@@ -10,17 +10,9 @@
 #include "logging.h"
 
 #define FNAME "main.c"
+struct CPU system;
 
-const int program[] = {
-    MOV_HN, 0xfe,
-    MOV_LN, 0xff,
-
-    INC_HL,
-    DUMP_R,
-    HALT, -1
-};
-
-int main()
+int main(int argc, char **argv)
 {
     logging_log(FNAME, "-- -- --");
     logging_log(FNAME, " Vicera by h34ting4ppliance!");
@@ -28,7 +20,6 @@ int main()
     logging_log(FNAME, "-- -- --");
     // Running program
     
-    struct CPU system;
     init_cpu(&system);
 
     system.pc = 0x0000;

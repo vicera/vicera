@@ -43,10 +43,10 @@ typedef enum {
     // mov l, *
     MOV_LA, MOV_LB, MOV_LC, MOV_LD, MOV_LE, MOV_LH, MOV_LL,
     // mov (HL), *
-    MOV_PA, MOV_PB, MOV_PC, MOV_PD, MOV_PE, MOV_PH, MOV_PL, MOV_PN,
+    MOV_PA, MOV_PB, MOV_PC, MOV_PD, MOV_PE, MOV_PH, MOV_PL,
 
     // mov r, n
-    MOV_AN, MOV_BN, MOV_CN, MOV_DN, MOV_EN, MOV_HN, MOV_LN,
+    MOV_AN, MOV_BN, MOV_CN, MOV_DN, MOV_EN, MOV_HN, MOV_LN, MOV_PN,
     // mov r, (HL)
     MOV_AP, MOV_BP, MOV_CP, MOV_DP, MOV_EP, MOV_HP, MOV_LP,
     

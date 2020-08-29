@@ -266,6 +266,38 @@ void mov_opcodes_ann_nna()
     assert_int_equal(system.registers[REG_B], 0x37);
 }
 
+void mov_opcodes_rrnn()
+{
+    /*
+     * mov rr, nn
+     */
+
+    system.pc = 0x0000;
+
+    const int program[] =
+    {
+        MOV_HLNN, 0xde, 0xad,
+        MOV_BCNN, 0xbe, 0xef,
+        MOV_DENN, 0x13, 0x37,
+        
+        DUMP_R,
+        HALT, -1
+    };
+
+    load_program(&system, program);
+    run(&system);
+
+    // HL = 0xdead
+    assert_int_equal(system.registers[REG_H], 0xde);
+    assert_int_equal(system.registers[REG_L], 0xad);
+    // BC = 0xbeef
+    assert_int_equal(system.registers[REG_B], 0xbe);
+    assert_int_equal(system.registers[REG_C], 0xef);
+    // DE = 0x1337
+    assert_int_equal(system.registers[REG_D], 0x13);
+    assert_int_equal(system.registers[REG_E], 0x37);
+}
+
 /*
  * ====================
  *  ARITHMEIC OPCODES
@@ -344,19 +376,22 @@ void math_opcodes_inc_dec()
 
     const int program[] = 
     {
-        INC_A, DEC_A,
-        INC_B, DEC_B,
-        INC_C, DEC_C,
-        INC_D, DEC_D,
-        INC_E, DEC_E,
-        INC_H, DEC_H,
-        INC_L, DEC_L,
+        INC_A, INC_A, DEC_A,
+        INC_B, INC_B, DEC_B,
+        INC_C, INC_C, DEC_C,
+        INC_D, INC_D, DEC_D,
+        INC_E, INC_E, DEC_E,
+        INC_H, INC_H, DEC_H,
+        INC_L, INC_L, DEC_L,
 
         HALT, -1
     };
 
+    load_program(&system, program);
+    run(&system);
+
     for (i = 0; i < REGSIZE; ++i)
-        assert_int_equal(system.registers[i], 0x00);
+        assert_int_equal(system.registers[i], 0x01);
 }
 
 /*
@@ -372,24 +407,65 @@ void stack_opcodes()
     system.pc = 0x0000;
     const int program[] =
     {
-        MOV_HN, 0xde,
-        MOV_LN, 0xad,
-        PUSH_HL,
-        MOV_HN, 0xbe,
-        MOV_LN, 0xef,
-        PUSH_HL,
-        
-        DUMP_M, 0xff, 0xf0,
-        POP_HL, DUMP_R,
-        POP_HL, DUMP_R,
+        MOV_HLNN, 0xde, 0xad,
+        MOV_BCNN, 0xbe, 0xef,
+        MOV_DENN, 0x13, 0x37,
+
+        PUSH_HL, PUSH_BC, PUSH_DE,
+        POP_HL, POP_DE, POP_BC,
+
         HALT, -1
     };
 
     load_program(&system, program);
     run(&system);
 
+    // HL = 0xdead
+    assert_int_equal(system.registers[REG_B], 0xde);
+    assert_int_equal(system.registers[REG_C], 0xad);
+    // BC = 0xbeef
+    assert_int_equal(system.registers[REG_D], 0xbe);
+    assert_int_equal(system.registers[REG_E], 0xef);
+    // DE = 0x1337
+    assert_int_equal(system.registers[REG_H], 0x13);
+    assert_int_equal(system.registers[REG_L], 0x37);
+}
+
+void stack_opcodes_pusha_popa()
+{
+    /*
+     * pusha
+     * popa
+     */
+
+    init_cpu(&system);
+    const int program[] =
+    {
+        MOV_HLNN, 0xde, 0xad,
+        MOV_BCNN, 0xbe, 0xef,
+        MOV_DENN, 0x13, 0x37,
+        PUSHA,
+
+        MOV_HLNN, 0x00, 0x00,
+        MOV_BCNN, 0x00, 0x00,
+        MOV_DENN, 0x00, 0x00,
+        POPA,
+
+        HALT, -1
+    };
+
+    load_program(&system, program);
+    run(&system);
+    
+    // HL = 0xdead
     assert_int_equal(system.registers[REG_H], 0xde);
     assert_int_equal(system.registers[REG_L], 0xad);
+    // BC = 0xbeef
+    assert_int_equal(system.registers[REG_B], 0xbe);
+    assert_int_equal(system.registers[REG_C], 0xef);
+    // DE = 0x1337
+    assert_int_equal(system.registers[REG_D], 0x13);
+    assert_int_equal(system.registers[REG_E], 0x37);
 }
 
 /*
@@ -561,22 +637,30 @@ int main()
 
     const struct CMUnitTest tests[] =
     {
+        // 8-bit mov opcodes
         cmocka_unit_test(mov_opcodes_rn),
         cmocka_unit_test(mov_opcodes_rr),
         cmocka_unit_test(mov_opcodes_rp),
         cmocka_unit_test(mov_opcodes_pr),
-
+        
+        // 16-bit mov opcodes
         cmocka_unit_test(mov_opcodes_spnn),
         cmocka_unit_test(mov_opcodes_ann_nna),
+        cmocka_unit_test(mov_opcodes_rrnn),
 
+        // ALU
         cmocka_unit_test(math_opcodes_add),
         cmocka_unit_test(math_opcodes_inc_dec),
 
+        // Stack
         cmocka_unit_test(stack_opcodes),
+        cmocka_unit_test(stack_opcodes_pusha_popa),
 
+        // Jumping
         cmocka_unit_test(jumping_opcodes),
         cmocka_unit_test(jumping_opcodes_cond),
 
+        // Conditions & Subroutines
         cmocka_unit_test(conditions),
 
         cmocka_unit_test(subroutines)

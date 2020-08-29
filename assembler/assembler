@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+#
+# VICERA ASSEMBLER
+# TODO: Make an actual assembler.
+#
+import sys, re
+from enum import IntEnum
+
+
+# 8-bit registers
+registers_8 = [
+        'A',
+        'B',
+        'C',
+        'D',
+        'E',
+        'H',
+        'L'
+        ]
+# 16-bit registers
+registers_16 = [
+        'HL',
+        'BC',
+        'DE'
+]
+# Stack pointer
+stackptr = "SP"
+# Pointer registers
+registers_ptr = [
+        '(HL)',
+        '(BC)',
+        '(DE)'
+]
+
+# Fuck you Python, pls add enum
+BIT8    = 0
+BIT16   = 1
+PTR     = 2
+STACK   = 3
+
+def parse_program(program: str):
+    return [(z[0],
+            [xx.strip() for xx in (' '.join(z[1:]).split(','))])
+                    for z in
+                        list(filter(lambda n: len(n) > 0, [y.split(';')[0].split()
+                            for y in [x.strip() 
+                                for x in program.split("\n")]]))]
+
+def string_to_value(value):
+    # Hexadecimal values
+    if      value.startswith("0x"):
+        v = int(value[2:], 16)
+    elif    value.startswith("&"):
+        v = int(value[1:], 16)
+    # Binary values
+    elif    value.startswith("0b"):
+        v = int(value[2:], 2)
+    # Octal values
+    elif    value.startswith("0"):
+        v = int(value[2:], 0)
+    # Decimal values
+    elif    value.isnumeric():
+        v = int(value)
+    # Single character
+    elif    re.match(r"'.'", value) and len(value) == 3:
+        v = ord(value[1])
+
+    ## Registers
+    # 8-bit registers
+    elif    value in registers_8:
+        return (BIT8, registers_8.index(value))
+    # 16-bit registers
+    elif    value in registers_16:
+        return (BIT16, registers_16.index(value))
+    # Pointers
+    elif    value in registers_ptr:
+        return (PTR, registers_ptr.index(value))
+    # Stack pointer
+    elif    value == stackptr:
+        return (STACK, stackptr.index(value))
+    else:
+        return None
+    
+    ### integer into bytes ###
+    arr = []
+    while v != 0:
+        arr.append(v % 0x100)
+        v >>= 8
+    
+    return arr[::-1]
+
+class AssemblyParse():
+    def __init__(self, program: list):
+        self.program = program
+        self.labels = {}
+
+    def assemble(self):
+        outprgm = []
+
+        for line in self.program:
+            opcode = line[0].lower()
+            args = [ string_to_value(x) for x in line[1] ]
+            
+            print(opcode, args)
+            # halt
+            if opcode == "halt":
+                output.append(0x00)
+            # nop
+            elif opcode == "nop":
+                output.append(0x01)
+            # push rr
+            elif opcode == "push" and args[0][0] == BIT16:
+                output.append(0x02 + args[0][1])
+            # pusha
+            elif opcode == "pusha":
+                output.append(0x05)
+            # pop rr
+            elif opcode == "pop" and args[0][0] == BIT16:
+                output.append(0x06 + args[0][1])
+            # popa
+            elif opcode == "popa":
+                output.append(0x09)
+            # mov
+            elif opcode == "mov" and type(args[0]) == tuple:
+                # mov *, (r/rr/(rr))
+                if type(args[1]) == tuple:
+                    # mov r, r
+                    if args[0][0] == BIT8 and args[1][0] == BIT8:
+                        output.append(0x0a + (args[0][1] * 7) + args[1][1])
+                    # mov (HL), r
+                    elif args[0] == (PTR, 0) and args[1][0] == BIT8:
+                        output.append(0x3b + args[1][1])
+                # mov *, n
+                elif type(args[1]) == list:
+
+
+def main():
+    prgm = open("test.asm").read()
+    parsed_prgm = parse_program(prgm)
+    
+    print(parsed_prgm)
+    asm = AssemblyParse(parsed_prgm)
+    
+    asm.assemble()
+
+if __name__ == "__main__":
+    main()

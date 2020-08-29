@@ -1,0 +1,29 @@
+X = done
+- = undone
+. = in progress
+? = Not planned yet
+
+--- CPU UPDATES ---
+
+X Add new opcodes (16-bits addressing)
+
+-------------------
+
+ X Design CPU
+ X Write CPU
+   X Write opcodes
+   X Make the long switch-case
+   X Fully implement flags
+   X Write tests
+ - Design GPU
+   - How will it work?
+   - How to handle sprites and shit
+ - Write GPU
+   - Tile support
+   - Sprite support
+ - Design Controller support
+   - Buttons
+   - RAM Access
+ - Implement Controller
+ - Write an assembler
+ ? SPU
