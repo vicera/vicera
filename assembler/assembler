@@ -3,9 +3,90 @@
 # VICERA ASSEMBLER
 # TODO: Make an actual assembler.
 #
+# This assembler is probably the worst
+# assembler I have ever written.
+#
 import sys, re
 from enum import IntEnum
 
+# Instructions
+IHALT       = 0x00
+INOP        = 0x01
+
+IPUSH_NN    = 0x02
+IPUSHA      = 0x05
+IPOP_NN     = 0x06
+IPOPA       = 0x09
+
+IMOV_RR     = 0x0a
+IMOV_PR     = 0x3b
+IMOV_RN     = 0x42
+IMOV_PN     = 0x49
+
+IMOV_RP     = 0x4a
+IMOV_SP     = 0x51
+
+IMOV_ARR    = 0x52
+IMOV_ANN    = 0x54
+IMOV_RRA    = 0x55
+IMOV_NNA    = 0x57
+
+IMOV_RRNN   = 0x58
+
+IADD_R      = 0x5b
+IADD_N      = 0x62
+IADD_P      = 0x63
+
+ISUB_R      = 0x64
+ISUB_N      = 0x6b
+ISUB_P      = 0x6c
+
+IAND_R      = 0x6d
+IAND_N      = 0x74
+IAND_P      = 0x75
+
+IOR_R       = 0x76
+IOR_N       = 0x7d
+IOR_P       = 0x7e
+
+IXOR_R      = 0x7f
+IXOR_N      = 0x86
+IXOR_P      = 0x87
+
+IINC_R      = 0x88
+IINC_P      = 0x8f
+IINC_RR     = 0x90
+
+IDEC_R      = 0x93
+IDEC_P      = 0x9a
+IDEC_RR     = 0x9b
+
+ISL_R       = 0x9e
+ISR_R       = 0xa5
+
+ICP_R       = 0xac
+ICP_N       = 0xb3
+ICP_P       = 0xb4
+
+IJP_NN      = 0xb5
+IJP_P       = 0xb6
+
+IJC_NN      = 0xb7
+IJC_P       = 0xb8
+
+IJZ_NN      = 0xb9
+IJZ_P       = 0xba
+
+IJN_NN      = 0xbb
+IJN_P       = 0xbc
+
+ICALL_NN    = 0xbd
+ICALL_P     = 0xbe
+
+IRET        = 0xbf
+
+IDUMP_R     = 0xc0
+IDUMP_M     = 0xc1
 
 # 8-bit registers
 registers_8 = [
@@ -27,26 +108,62 @@ registers_16 = [
 stackptr = "SP"
 # Pointer registers
 registers_ptr = [
-        '(HL)',
-        '(BC)',
-        '(DE)'
+        'HL',
+        'BC',
+        'DE'
 ]
 
 # Fuck you Python, pls add enum
-BIT8    = 0
-BIT16   = 1
-PTR     = 2
-STACK   = 3
+BIT8    = 0 # 8-bit register
+BIT16   = 1 # 16-bit register
+PTR     = 2 # Pointer (example: (HL))
+STACK   = 3 # Stack pointer
+ADDR    = 4 # Address (example: (&1fb2))
+
+def log(message):
+    for line in message.split('\n'):
+        print(f"[#] {line}", file=sys.stderr)
+def die(message):
+    for line in message.split('\n'):
+        print(f"[X] {line}", file=sys.stderr)
+    sys.exit(1)
+# For syntax errors
+def syndie(line, message):
+    die(f"Error at {line}: {message}")
+
+# To check the value type.
+# Appending a 16-bits integer.
+def append_int(arr: list, v: list):
+    if v[0] == -1:
+        arr.append(v[1])
+    elif len(v) == 1:
+        arr += [0x00, v[0]]
+    else:
+        arr += v
 
 def parse_program(program: str):
-    return [(z[0],
-            [xx.strip() for xx in (' '.join(z[1:]).split(','))])
-                    for z in
-                        list(filter(lambda n: len(n) > 0, [y.split(';')[0].split()
-                            for y in [x.strip() 
-                                for x in program.split("\n")]]))]
+    splited_program = program.split("\n")
+    parsed_program = []
+
+    # For debugging purposes. The line number is recorded.
+    for num, line in enumerate(splited_program):
+        line = line.split(";")[0].strip()
+        if line != "":
+            # If the line is not empty, parse and append.
+            pline = (line.split()[0], [
+                x.strip() for x in 
+                ' '.join(line.split()[1:]).split(',')])
+            parsed_program.append((num + 1, pline))
+
+    return parsed_program
 
 def string_to_value(value):
+    # Checking if this is a pointer.
+    is_ptr = False
+    if value.startswith('(') and value.endswith(')'):
+        is_ptr = True
+        value = value[1:-1]
+
     # Hexadecimal values
     if      value.startswith("0x"):
         v = int(value[2:], 16)
@@ -56,8 +173,8 @@ def string_to_value(value):
     elif    value.startswith("0b"):
         v = int(value[2:], 2)
     # Octal values
-    elif    value.startswith("0"):
-        v = int(value[2:], 0)
+    elif    value.startswith("0") and len(value) > 1:
+        v = int(value[1:], 8)
     # Decimal values
     elif    value.isnumeric():
         v = int(value)
@@ -71,23 +188,36 @@ def string_to_value(value):
         return (BIT8, registers_8.index(value))
     # 16-bit registers
     elif    value in registers_16:
-        return (BIT16, registers_16.index(value))
-    # Pointers
-    elif    value in registers_ptr:
-        return (PTR, registers_ptr.index(value))
+        if is_ptr:
+            return (PTR, registers_ptr.index(value))
+        else:
+            return (BIT16, registers_16.index(value))
     # Stack pointer
     elif    value == stackptr:
-        return (STACK, stackptr.index(value))
+        return (STACK, 0)
     else:
-        return None
+        if is_ptr:
+            return (ADDR, [-1, value])
+        else:
+            return [-1, value]
     
     ### integer into bytes ###
     arr = []
     while v != 0:
         arr.append(v % 0x100)
         v >>= 8
+    if arr == []:
+        arr = [0]
     
-    return arr[::-1]
+    if is_ptr:
+        if len(arr) == 2:
+            return (ADDR, arr[::-1])
+        elif len(arr) == 1:
+            return (ADDR, [0x00, arr[0]])
+        else:
+            return None
+    else:
+        return arr[::-1]
 
 class AssemblyParse():
     def __init__(self, program: list):
@@ -95,50 +225,122 @@ class AssemblyParse():
         self.labels = {}
 
     def assemble(self):
-        outprgm = []
+        output = []
+        labels = {}
 
         for line in self.program:
-            opcode = line[0].lower()
-            args = [ string_to_value(x) for x in line[1] ]
+            linenum = line[0]
+            opcode = line[1][0].lower()
+            args = [ string_to_value(x) for x in line[1][1] ]
             
             print(opcode, args)
             # halt
             if opcode == "halt":
-                output.append(0x00)
+                output.append(IHALT)
             # nop
             elif opcode == "nop":
-                output.append(0x01)
+                output.append(INOP)
             # push rr
             elif opcode == "push" and args[0][0] == BIT16:
-                output.append(0x02 + args[0][1])
+                output.append(IPUSH_NN + args[0][1])
             # pusha
             elif opcode == "pusha":
-                output.append(0x05)
+                output.append(IPUSHA)
             # pop rr
             elif opcode == "pop" and args[0][0] == BIT16:
-                output.append(0x06 + args[0][1])
+                output.append(IPOP_NN + args[0][1])
             # popa
             elif opcode == "popa":
-                output.append(0x09)
+                output.append(IPOPA)
             # mov
             elif opcode == "mov" and type(args[0]) == tuple:
-                # mov *, (r/rr/(rr))
+                # mov *, (r/rr/(rr)/(nn))
                 if type(args[1]) == tuple:
                     # mov r, r
                     if args[0][0] == BIT8 and args[1][0] == BIT8:
-                        output.append(0x0a + (args[0][1] * 7) + args[1][1])
+                        output.append(IMOV_RR + (args[0][1] * 7) + args[1][1])
                     # mov (HL), r
                     elif args[0] == (PTR, 0) and args[1][0] == BIT8:
-                        output.append(0x3b + args[1][1])
+                        output.append(IMOV_PR + args[1][1])
+                    # mov r, (HL)
+                    elif args[0][0] == BIT8 and args[1] == (PTR, 0):
+                        output.append(IMOV_RP + args[0][1])
+                    # mov A, (BC/DE)
+                    elif args[0] == (BIT8, 0) and args[1][0] == PTR and args[1][1] >= 1:
+                        output.append(IMOV_ARR + args[1][1] - 1)
+                    # mov A, nn
+                    elif args[0] == (BIT8, 0) and args[1][0] == ADDR:
+                        output.append(IMOV_ANN)
+                        append_int(output, args[1][1])
+                    # mov (BC/DE), A
+                    elif args[1] == (BIT8, 0) and args[0][0] == PTR and args[0][1] >= 1:
+                        output.append(IMOV_RRA + args[0][1] - 1)
+                    # mov nn, A
+                    elif args[1] == (BIT8, 0) and args[0][0] == ADDR:
+                        output.append(IMOV_NNA)
+                        append_int(output, args[0][1])
+                    # Nothing
+                    else:
+                        syndie(linenum, "Invalid arguments.")
+                
                 # mov *, n
                 elif type(args[1]) == list:
+                    # mov r, n
+                    if args[0][0] == BIT8:
+                        output.append(IMOV_RN + args[0][1])
+                        output.append(args[1][0])
+                    # mov (HL), n
+                    elif args[0] == (PTR, 0):
+                        output.append(IMOV_PN)
+                        output.append(args[1][0])
+                    # mov SP, nn
+                    elif args[0] == (STACK, 0):
+                        output.append(IMOV_SP)
+                        append_int(output, args[1])
+                    # mov HL/BC/DE, nn
+                    elif args[0][0] == BIT16:
+                        output.append(IMOV_RRNN + args[0][1])
+                        append_int(output, args[1])
+                    # nothing
+                    else:
+                        syndie(linenum, "Invalid arguments.")
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # add
+            elif opcode == "add":
+                if type(args[0]) == tuple and args[0][0] == BIT8:
+                    output.append(IADD_R + args[0][1])
+                elif type(args[0]) == list:
+                    output.append(IADD_N)
+                    output.append(args[0][0])
+                elif args[0] == (PTR, 0):
+                    output.append(IADD_P)
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # sub
 
+            # none
+            else:
+                syndie(linenum, "Invalid command.")
+        
+        print("=========================")
+        print(output)
+        print("=========================")
+        print(list(filter(lambda n: n != 0xff and type(n) != str, output)))
 
 def main():
+    log("""-----------
+__     ___                    
+\ \   / (_) ___ ___ _ __ __ _ 
+ \ \ / /| |/ __/ _ \ '__/ _` | Tiny assembler by
+  \ V / | | (_|  __/ | | (_| | Matthilde "h34ting4ppliance" Condenseau
+   \_/  |_|\___\___|_|  \__,_| Made for testing purposes.
+-----------""")
+
     prgm = open("test.asm").read()
     parsed_prgm = parse_program(prgm)
     
-    print(parsed_prgm)
+    print('\n'.join([str(x) for x in parsed_prgm]))
     asm = AssemblyParse(parsed_prgm)
     
     asm.assemble()

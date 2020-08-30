@@ -1,74 +1,127 @@
-; Testing assembly file
-jp BEGIN
+; VICERA ASSEMBLER TESTING FILE
+;
+; This file contains all possible opcodes that can be
+; put in the assembler. While debugging the assembler,
+; it should show all those instruction in the numerical
+; order.
+;
+halt	; Also a testing comment
+nop
 
-my_sprite:
-	db 0b11111111
-	db 0b10000001
-	db 0b10000001
-	db 0b10000001
-	db 0b10000001
-	db 0b10000001
-	db 0b10000001
-	db 0b11111111
+; Test comments
+push HL	; Another comment
+push BC
+push DE
+pusha
 
-LOAD_SPRITES:
-	; setting up addresses
-	xor C
+pop HL
+pop BC
+pop DE
+popa
 
-	mov BC, my_sprite
-	mov HL, 0x8500
+mov A, A
+mov A, B
+mov A, C
+mov A, D
+mov A, E
+mov A, H
+mov A, L
 
-	; move 8 bytes to the sprite
-	; memory in the VRAM
-	LOAD_SPRITES_LOOP:
-		mov A, (BC)
-		inc BC
+mov B, A
+mov B, B
+mov B, C
+mov B, D
+mov B, E
+mov B, H
+mov B, L
 
-		mov (HL), A
-		inc HL
+mov C, A
+mov C, B
+mov C, C
+mov C, D
+mov C, E
+mov C, H
+mov C, L
 
-		inc C
-		mov A, 8
-		cp C
-		
-		jz LOAD_SPRITES_END		; This is an useless comment
-		jp LOAD_SPRITES_LOOP	; to test the comment parsing.
-	
-	; Set up a slot in the sprite
-	; index
-	LOAD_SPRITES_END:
-		mov HL, 0x8000
-		
-		mov A, 0x00
-		mov (HL), A
-		inc HL
+mov D, A
+mov D, B
+mov D, C
+mov D, D
+mov D, E
+mov D, H
+mov D, L
 
-		mov A, 0x01
-		mov (HL), A
-	
-	ret
+mov E, A
+mov E, B
+mov E, C
+mov E, D
+mov E, E
+mov E, H
+mov E, L
 
-; Beginning of the computer
-; program
-BEGIN:
-	call LOAD_SPRITES
-	
-	mov HL, 0x8002
-	mov DE, 0xfff0
-	xor A
-	jp MAINLOOP
+mov H, A
+mov H, B
+mov H, C
+mov H, D
+mov H, E
+mov H, H
+mov H, L
 
-MAINLOOP:
-	; moving sprite
-	mov (HL), A
-	inc HL
-	mov (HL), A
-	dec HL
+mov L, A
+mov L, B
+mov L, C
+mov L, D
+mov L, E
+mov L, H
+mov L, L
 
-	; Waiting for screen update
-	WAITSCREEN:
-		cp (DE)
-		jc MAINLOOP
+mov (HL), A
+mov (HL), B
+mov (HL), C
+mov (HL), D
+mov (HL), E
+mov (HL), H
+mov (HL), L
 
-		mov A, (DE)
-		jp WAITSCREEN
+mov A, 0xff
+mov B, 255
+mov C, 0377
+mov D, ' '
+mov E, &ff
+mov H, 0b11111111
+mov L, 255
+
+mov (HL), 0xff
+
+mov A, (HL)
+mov B, (HL)
+mov C, (HL)
+mov D, (HL)
+mov E, (HL)
+mov H, (HL)
+mov L, (HL)
+
+mov SP, myLabel
+
+mov A, (BC)
+mov A, (DE)
+mov A, (0xffff)
+
+mov (BC), A
+mov (DE), A
+mov (0xffff), A
+
+mov HL, 0xffff
+mov BC, 0xffff
+mov DE, 0xffff
+
+add A
+add B
+add C
+add D
+add E
+add H
+add L
+
+add 0xff
+add (HL)
