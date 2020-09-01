@@ -6,6 +6,7 @@
 ; order.
 ;
 halt	; Also a testing comment
+testLabel: ; must be at 0x0001
 nop
 
 ; Test comments
@@ -14,6 +15,7 @@ push BC
 push DE
 pusha
 
+anotherLabel:	; must at 0x0006
 pop HL
 pop BC
 pop DE
@@ -101,7 +103,7 @@ mov E, (HL)
 mov H, (HL)
 mov L, (HL)
 
-mov SP, myLabel
+mov SP, anotherLabel
 
 mov A, (BC)
 mov A, (DE)
@@ -124,4 +126,121 @@ add H
 add L
 
 add 0xff
-add (HL)
+add (HL)	; I am proud of what I have done so far...
+
+sub A
+sub B
+sub C
+sub D
+sub E
+sub H
+sub L
+
+sub 0xff
+sub (HL)
+
+and A
+and B
+and C
+and D
+and E
+and H
+and L
+
+and 0xff
+and (HL)
+
+or A
+or B
+or C
+or D
+or E
+or H
+or L
+
+or 0xff
+or (HL)
+
+xor A
+xor B
+xor C
+xor D
+xor E
+xor H
+xor L
+
+xor 0xff
+xor (HL)
+
+inc A
+inc B
+inc C
+inc D
+inc E
+inc H
+inc L
+inc HL
+inc BC
+inc DE
+
+dec A
+dec B
+dec C
+dec D
+dec E
+dec H
+dec L
+dec HL
+dec BC
+dec DE
+
+sl A
+sl B
+sl C
+sl D
+sl E
+sl H
+sl L
+
+sr A
+sr B
+sr C
+sr D
+sr E
+sr H
+sr L
+
+cp A
+cp B
+cp C
+cp D
+cp E
+cp H
+cp L
+
+cp 0xff
+cp (HL)
+
+jp 0xffff
+jp (HL)
+
+jc 0xffff
+jc (HL)
+
+jz 0xffff
+jz (HL)
+
+jn 0xffff
+jn (HL)
+
+call 0xffff
+call (HL)
+
+ret
+
+dumpr
+dumpm 0xffff
+
+slp
+
+db 0x01, 2, 03, 0b100, &4, testLabel

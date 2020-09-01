@@ -120,7 +120,11 @@ typedef enum {
     // Dump registers
     DUMP_R,
     // Dump memory
-    DUMP_M
+    DUMP_M,
+
+    // This instruction is meant to let the machine sleep
+    // for a very short time to avoid that your fans go brrr
+    SLP
 
 } Instructions;
 

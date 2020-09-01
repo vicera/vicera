@@ -54,39 +54,39 @@ IXOR_N      = 0x86
 IXOR_P      = 0x87
 
 IINC_R      = 0x88
-IINC_P      = 0x8f
-IINC_RR     = 0x90
+IINC_RR     = 0x8f
 
-IDEC_R      = 0x93
-IDEC_P      = 0x9a
-IDEC_RR     = 0x9b
+IDEC_R      = 0x92
+IDEC_RR     = 0x99
 
-ISL_R       = 0x9e
-ISR_R       = 0xa5
+ISL_R       = 0x9c
+ISR_R       = 0xa3
 
-ICP_R       = 0xac
-ICP_N       = 0xb3
-ICP_P       = 0xb4
+ICP_R       = 0xaa
+ICP_N       = 0xb1
+ICP_P       = 0xb2
 
-IJP_NN      = 0xb5
-IJP_P       = 0xb6
+IJP_NN      = 0xb3
+IJP_P       = 0xb4
 
-IJC_NN      = 0xb7
-IJC_P       = 0xb8
+IJC_NN      = 0xb5
+IJC_P       = 0xb6
 
-IJZ_NN      = 0xb9
-IJZ_P       = 0xba
+IJZ_NN      = 0xb7
+IJZ_P       = 0xb8
 
-IJN_NN      = 0xbb
-IJN_P       = 0xbc
+IJN_NN      = 0xb9
+IJN_P       = 0xba
 
-ICALL_NN    = 0xbd
-ICALL_P     = 0xbe
+ICALL_NN    = 0xbb
+ICALL_P     = 0xbc
 
-IRET        = 0xbf
+IRET        = 0xbd
 
-IDUMP_R     = 0xc0
-IDUMP_M     = 0xc1
+IDUMP_R     = 0xbe
+IDUMP_M     = 0xbf
+
+ISLP        = 0xc0
 
 # 8-bit registers
 registers_8 = [
@@ -131,11 +131,14 @@ def die(message):
 def syndie(line, message):
     die(f"Error at {line}: {message}")
 
+# 8-bit to 16-bit
+def c8to16(v):
+    return [ v // 0x100, v % 0x100 ]
 # To check the value type.
 # Appending a 16-bits integer.
 def append_int(arr: list, v: list):
     if v[0] == -1:
-        arr.append(v[1])
+        arr += v
     elif len(v) == 1:
         arr += [0x00, v[0]]
     else:
@@ -308,16 +311,165 @@ class AssemblyParse():
                     syndie(linenum, "Invalid arguments.")
             # add
             elif opcode == "add":
+                # add n
                 if type(args[0]) == tuple and args[0][0] == BIT8:
                     output.append(IADD_R + args[0][1])
+                # add r
                 elif type(args[0]) == list:
                     output.append(IADD_N)
                     output.append(args[0][0])
+                # add (HL)
                 elif args[0] == (PTR, 0):
                     output.append(IADD_P)
                 else:
                     syndie(linenum, "Invalid arguments.")
             # sub
+            elif opcode == "sub":
+                if type(args[0]) == tuple and args[0][0] == BIT8:
+                    output.append(ISUB_R + args[0][1])
+                elif type(args[0]) == list:
+                    output.append(ISUB_N)
+                    output.append(args[0][0])
+                elif args[0] == (PTR, 0):
+                    output.append(ISUB_P)
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # and
+            elif opcode == "and":
+                if type(args[0]) == tuple and args[0][0] == BIT8:
+                    output.append(IAND_R + args[0][1])
+                elif type(args[0]) == list:
+                    output.append(IAND_N)
+                    output.append(args[0][0])
+                elif args[0] == (PTR, 0):
+                    output.append(IAND_P)
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # or
+            elif opcode == "or":
+                if type(args[0]) == tuple and args[0][0] == BIT8:
+                    output.append(IOR_R + args[0][1])
+                elif type(args[0]) == list:
+                    output.append(IOR_N)
+                    output.append(args[0][0])
+                elif args[0] == (PTR, 0):
+                    output.append(IOR_P)
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # xor
+            elif opcode == "xor":
+                if type(args[0]) == tuple and args[0][0] == BIT8:
+                    output.append(IXOR_R + args[0][1])
+                elif type(args[0]) == list:
+                    output.append(IXOR_N)
+                    output.append(args[0][0])
+                elif args[0] == (PTR, 0):
+                    output.append(IXOR_P)
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # inc
+            elif opcode == "inc":
+                if type(args[0]) == tuple and args[0][0] == BIT8:
+                    output.append(IINC_R + args[0][1])
+                elif type(args[0]) == tuple and args[0][0] == BIT16:
+                    output.append(IINC_RR + args[0][1])
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # dec
+            elif opcode == "dec":
+                if type(args[0]) == tuple and args[0][0] == BIT8:
+                    output.append(IDEC_R + args[0][1])
+                elif type(args[0]) == tuple and args[0][0] == BIT16:
+                    output.append(IDEC_RR + args[0][1])
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # sl
+            elif opcode == "sl" and type(args[0]) == tuple and args[0][0] == BIT8:
+                output.append(ISL_R + args[0][1])
+            # sr
+            elif opcode == "sr" and type(args[0]) == tuple and args[0][0] == BIT8:
+                output.append(ISR_R + args[0][1])
+            # cp
+            elif opcode == "cp":
+                if type(args[0]) == tuple and args[0][0] == BIT8:
+                    output.append(ICP_R + args[0][1])
+                elif type(args[0]) == list:
+                    output.append(ICP_N)
+                    output.append(args[0][0])
+                elif args[0] == (PTR, 0):
+                    output.append(ICP_P)
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # jp
+            elif opcode == "jp":
+                if type(args[0]) == list:
+                    output.append(IJP_NN)
+                    append_int(output, args[0])
+                elif args[0] == (PTR, 0):
+                    output.append(IJP_P)
+            # jc
+            elif opcode == "jc":
+                if type(args[0]) == list:
+                    output.append(IJC_NN)
+                    append_int(output, args[0])
+                elif args[0] == (PTR, 0):
+                    output.append(IJC_P)
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # jz
+            elif opcode == "jz":
+                if type(args[0]) == list:
+                    output.append(IJZ_NN)
+                    append_int(output, args[0])
+                elif args[0] == (PTR, 0):
+                    output.append(IJZ_P)
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # jn
+            elif opcode == "jn":
+                if type(args[0]) == list:
+                    output.append(IJN_NN)
+                    append_int(output, args[0])
+                elif args[0] == (PTR, 0):
+                    output.append(IJN_P)
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # call
+            elif opcode == "call":
+                if type(args[0]) == list:
+                    output.append(ICALL_NN)
+                    append_int(output, args[0])
+                elif args[0] == (PTR, 0):
+                    output.append(ICALL_P)
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # ret
+            elif opcode == "ret":
+                output.append(IRET)
+            # dump
+            elif opcode == "dumpr":
+                output.append(IDUMP_R)
+            elif opcode == "dumpm":
+                if type(args[0]) == list:
+                    output.append(IDUMP_M)
+                    append_int(output, args[0])
+                else:
+                    syndie(linenum, "Invalid arguments.")
+            # slp
+            elif opcode == "slp":
+                output.append(ISLP)
+            
+            ### Assembler-wise instructions
+            # Labels
+            elif opcode.endswith(":"):
+                labels[opcode[:-1]] = c8to16(len(output))
+            # db
+            elif opcode == "db":
+                for entry in args:
+                    if type(entry) != list:
+                        syndie(linenum, "Invalid arguments.")
+                    else:
+                        output += entry
 
             # none
             else:
@@ -326,7 +478,15 @@ class AssemblyParse():
         print("=========================")
         print(output)
         print("=========================")
-        print(list(filter(lambda n: n != 0xff and type(n) != str, output)))
+        test = list(filter(lambda n: n != 0xff and type(n) != str, output))
+        print(test)
+        print(labels)
+
+        log("Replacing labels by it's appropriate values...")
+        # Labels has been successfully indexed. Poggers
+        final_output = []
+        for instruction in output:
+            pass
 
 def main():
     log("""-----------

@@ -6,6 +6,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "cpu.h"
 #include "logging.h"
 
@@ -14,6 +15,10 @@
 #define JC      0
 #define JZ      1
 #define JNZ     2
+
+// Timer
+struct timespec ts = {0, 1};
+struct timespec tn;
 
 /*
  * Logging functions
@@ -810,6 +815,10 @@ void execute(struct CPU *cpu)
         case DUMP_M:
             dump_memory(cpu, memword(cpu));
             jmpret = 1;
+            break;
+        
+        case SLP:
+            nanosleep(&ts, &tn);
             break;
 
         default:
