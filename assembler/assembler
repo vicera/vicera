@@ -236,7 +236,7 @@ class AssemblyParse():
             opcode = line[1][0].lower()
             args = [ string_to_value(x) for x in line[1][1] ]
             
-            print(opcode, args)
+            # print(opcode, args)
             # halt
             if opcode == "halt":
                 output.append(IHALT)
@@ -475,18 +475,25 @@ class AssemblyParse():
             else:
                 syndie(linenum, "Invalid command.")
         
+        """
         print("=========================")
         print(output)
         print("=========================")
         test = list(filter(lambda n: n != 0xff and type(n) != str, output))
         print(test)
         print(labels)
+        """
 
         log("Replacing labels by it's appropriate values...")
         # Labels has been successfully indexed. Poggers
-        final_output = []
-        for instruction in output:
-            pass
+        for ptr, instr in enumerate(output):
+            if instr == -1:
+                label = labels[output[ptr+1].lower()]
+                output[ptr] = label[0]
+                output[ptr+1] = label[1]
+        
+        return output
+        # print(output)
 
 def main():
     log("""-----------
@@ -497,13 +504,17 @@ __     ___
    \_/  |_|\___\___|_|  \__,_| Made for testing purposes.
 -----------""")
 
-    prgm = open("test.asm").read()
+    if len(sys.argv) != 2:
+        sys.exit(1)
+    prgm = open(sys.argv[1]).read()
     parsed_prgm = parse_program(prgm)
     
     print('\n'.join([str(x) for x in parsed_prgm]))
     asm = AssemblyParse(parsed_prgm)
     
-    asm.assemble()
-
+    b = asm.assemble()
+    with open("a.vicera", "wb") as f:
+        f.write(bytearray(b))
+        
 if __name__ == "__main__":
     main()
