@@ -6,11 +6,18 @@
  * instruction set.
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include "cpu.h"
 #include "logging.h"
 
 #define FNAME "main.c"
-struct CPU system;
+struct CPU console;
+
+void print_usage()
+{
+    logging_error(FNAME, "Usage: vicera ROMFILE");
+    exit(1);
+}
 
 int main(int argc, char **argv)
 {
@@ -20,11 +27,22 @@ int main(int argc, char **argv)
     logging_log(FNAME, "-- -- --");
     // Running program
     
-    init_cpu(&system);
-
-    system.pc = 0x0000;
-    for (int i = 0; program[i] != EOF; ++i)
-        system.memory[i] = program[i];
+    if (argc != 2)
+        print_usage();
     
-    run(&system);
+    FILE *rom = fopen(argv[1], "r");
+    if (!rom)
+    {
+        perror("Unable to open ROM: %s");
+        exit(1);
+    }
+
+    int c;
+    init_cpu(&console);
+    
+    console.pc = 0x0000;
+    for (int i = 0; (c=fgetc(rom)) != EOF; ++i)
+        console.memory[i] = c;
+    
+    run(&console);
 }
