@@ -16,10 +16,6 @@
 #define JZ      1
 #define JNZ     2
 
-// Timer
-struct timespec ts = {0, 1};
-struct timespec tn;
-
 /*
  * Logging functions
  */
@@ -311,14 +307,20 @@ void sr_r(struct CPU* cpu, int reg_a)
     cpu->registers[reg_a] >>= 1;
 }
 
+// cp n
+void cp_n(struct CPU* cpu, BYTE byte_a)
+{
+    BYTE acc = cpu->registers[REG_A];
+    BYTE nflags = ((acc == byte_a) * Z_FLAG) + ((acc < byte_a) * C_FLAG);
+
+    cpu->flags = nflags;
+}
+
 // cp r
 void cp_r(struct CPU* cpu, int reg_a)
 {
     BYTE *rega = get_register(cpu, reg_a);
-    BYTE acc = cpu->registers[REG_A];
-
-    BYTE nflags = (acc == *rega) * Z_FLAG + (acc < *rega) * C_FLAG;
-    cpu->flags = nflags;
+    cp_n(cpu, *rega);
 }
 
 // pop
@@ -373,16 +375,16 @@ void stack_pop_all(struct CPU* cpu)
 // jump
 int mem_jump(struct CPU* cpu, int type, WORD addr)
 {
-    int b;
+    int b = 0;
     switch (type)
     {
-        case 0:     // jc
+        case JC:     // jc
             b = C_FLAG & cpu->flags;
             break;
-        case 1:     // jz
+        case JZ:     // jz
             b = Z_FLAG & cpu->flags;
             break;
-        case 2:     // jn
+        case JNZ:     // jn
             b = !(Z_FLAG & cpu->flags);
             break;
         default:    // jp
@@ -435,6 +437,9 @@ void dump_registers(struct CPU* cpu)
     pwarn("-- REGISTER DUMP --");
     for (i = 0; i < REGSIZE; ++i)
         fprintf(stderr, "Register %2x = %02x\n", i, cpu->registers[i]);
+    fprintf(stderr, "Flags = 0x%02x\n", cpu->flags);
+    fprintf(stderr, "SP = 0x%04x\n", cpu->sp);
+
     fprintf(stderr, "\n");
     pwarn("-- END OF DUMP --");
 }
@@ -760,11 +765,10 @@ void execute(struct CPU *cpu)
         case CP_E:
         case CP_H:
         case CP_L:
-            cp_r(cpu, instr - SR_A);
+            cp_r(cpu, instr - CP_A);
             break;
         case CP_N:
-            // TODO Make cp_n
-            // cp_n(cpu, cpu->memory[++cpu->pc]);
+            cp_n(cpu, cpu->memory[++cpu->pc]);
             break;
         case CP_P:
             cp_r(cpu, REG_HL);
@@ -818,7 +822,7 @@ void execute(struct CPU *cpu)
             break;
         
         case SLP:
-            nanosleep(&ts, &tn);
+            nanosleep((struct timespec[]){{0, 3000L}}, NULL);
             break;
 
         default:
