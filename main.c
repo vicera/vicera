@@ -8,10 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cpu.h"
+#include "gpu.h"
 #include "logging.h"
 
 #define FNAME "main.c"
 struct CPU console;
+struct GPU console_gpu;
 
 void print_usage()
 {
@@ -39,7 +41,8 @@ int main(int argc, char **argv)
 
     int c;
     init_cpu(&console);
-    
+    init_gpu(&console_gpu, &console);
+
     console.pc = 0x0000;
     for (int i = 0; (c=fgetc(rom)) != EOF; ++i)
         console.memory[i] = c;

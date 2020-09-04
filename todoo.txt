@@ -1,4 +1,5 @@
 X = done
+/ = kinda done
 - = undone
 . = in progress
 ? = Not planned yet
@@ -15,9 +16,9 @@ X Add new opcodes (16-bits addressing)
    X Make the long switch-case
    X Fully implement flags
    X Write tests
- - Design GPU
-   - How will it work?
-   - How to handle sprites and shit
+ . Design GPU
+   . How will it work?
+   X How to handle sprites and shit
  - Write GPU
    - Tile support
    - Sprite support
@@ -25,5 +26,5 @@ X Add new opcodes (16-bits addressing)
    - Buttons
    - RAM Access
  - Implement Controller
- - Write an assembler
+ / Write an assembler
  ? SPU
