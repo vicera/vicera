@@ -1,9 +1,21 @@
+/*
+ * VICERA by h34ting4ppliance
+ *
+ * gpu.c
+ *
+ * This file contains the GPU API to work on the
+ * graphical part of the console.
+ *
+ * For everything related to the SDL rendering,
+ * please refer to gpu_sdl.c
+ *
+ * Everything has been designed to be easily portable
+ * with any other rendering engine.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-// The current GPU has been designed for SDL.
-// But the interface is designed to be portable enough
-// to port it to another library.
+#include "cpu.h"
 
 /*
  * GPU Memory bindings
@@ -21,12 +33,105 @@
  *
  */
 
-// Width and Height of screen
-#define SCREEN_X 256
-#define SCREEN_Y 256
+/*
+ * Sprite memory cell binding
+ * --------------------------
+ *
+ * 01 04 de ad
+ * |  |  |  |
+ * |  |  |  Y Position of the sprite
+ * |  |  X Position of the sprite
+ * |  ID of the sprite stored in the Sprites memory
+ * (Boolean) is it active?
+ */
 
-// struct containing all required data
-struct GPU {
-    // The screen itself.
-    bool screen[SCREEN_X][SCREEN_Y];
-};
+// struct GPU, struct CPU -> None
+// Initialization routine of the struct.
+void init_gpu(struct GPU *gpu, struct CPU *cpu)
+{
+    gpu->scroll.x = 0;
+    gpu->scroll.y = 0;
+    gpu->cpu = cpu;
+}
+
+// struct GPU, struct GPU_Point, WORD -> None
+// Inserts sprite where it has to.
+//
+// It reads the sprite from the CPU memory at
+// the specified address then insert it at the
+// specified position in the screen.
+void insert_sprite(struct GPU *gpu, struct GPU_Point pos, WORD addr)
+{
+    // Reads 8 bytes of memory to make a sprite.
+    int line, i;
+    char px, py;
+    BYTE curbyte;
+    
+    px = pos.x;
+    py = pos.y;
+
+    for (line = 0; line < 8; ++line)
+    {
+        curbyte = gpu->cpu->memory[addr + line];
+        for (i = 0; i < 8; ++i)
+        {
+            gpu->screen[(x+i) % SCREEN_X][(y+line) % SCREEN_Y] = curbyte & 1;
+            curbyte >>= 1;
+        }
+    }
+}
+
+// struct CPU -> None
+// Clears the screen
+void clear_screen(struct GPU* gpu)
+{
+    int x, y;
+    for (y = 0; y < SCREEN_Y; ++y)
+        for (x = 0; x < SCREEN_X; ++x)
+            gpu->screen[SCREEN_X][SCREEN_Y] = 0;
+}
+
+// struct GPU -> None
+// Render the screen
+void render_screen(struct GPU *gpu)
+{
+    int i;
+    struct GPU_Point pos;
+    WORD mempos;
+
+    // Alias to the CPU memory
+    BYTE* cpumem = gpu->cpu->memory;
+    // Rendering order:
+    //  - Clear screen
+    //  - Insert tiles
+    //  - Inert sprites
+
+    // Clear screen.
+    clear_screen(gpu);
+
+    // Reads into memory and sets up the tiles.
+    for (i = 0; i < 0x100; ++i)
+    {
+        pos.x = (i % (SCREEN_X / SPRSIZE)) * 8;
+        pos.y = (i / (SCREEN_Y / SPRSIZE)) * 8;
+
+        mempos = M_TILMEM + (cpumem[M_TILINDEX + i] * 8);
+        insert_sprite(gpu, pos, mempos);
+    }
+
+    // Read into memory and sets up the sprites.
+    for (i = 0; i < 64; ++i)
+    {
+        if (!cpumem[M_SPRINDEX + (i * 4)])
+            continue;
+
+        pos.x = cpumem[M_SPRINDEX + (i * 4) + 2];
+        pos.y = cpumem[M_SPRINDEX + (i * 4) + 3];
+        
+        mempos = M_SPRMEM + ((cpumem[M_SPRINDEX + i] % 64) * 8);
+        insert_sprite(gpu, pos, mempos);
+    } 
+
+    cpumem[M_REFRESH] += 1;
+    // TODO: Finish this function and make the SDL front-end.
+}
