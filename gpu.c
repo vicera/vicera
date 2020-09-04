@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "cpu.h"
+#include "gpu.h"
+#include "logging.h"
 
 /*
  * GPU Memory bindings
@@ -49,6 +51,7 @@
 // Initialization routine of the struct.
 void init_gpu(struct GPU *gpu, struct CPU *cpu)
 {
+    logging_log("gpu.c", "Initializing GPU...");
     gpu->scroll.x = 0;
     gpu->scroll.y = 0;
     gpu->cpu = cpu;
@@ -75,7 +78,8 @@ void insert_sprite(struct GPU *gpu, struct GPU_Point pos, WORD addr)
         curbyte = gpu->cpu->memory[addr + line];
         for (i = 0; i < 8; ++i)
         {
-            gpu->screen[(x+i) % SCREEN_X][(y+line) % SCREEN_Y] = curbyte & 1;
+            gpu->screen[(px+i) /*% SCREEN_X*/][(py+line) /*% SCREEN_Y*/] = curbyte & 1;
+            // TODO: Fix that shit.
             curbyte >>= 1;
         }
     }
@@ -95,8 +99,9 @@ void clear_screen(struct GPU* gpu)
 // Render the screen
 void render_screen(struct GPU *gpu)
 {
-    int i;
+    int i, t;
     struct GPU_Point pos;
+
     WORD mempos;
 
     // Alias to the CPU memory
@@ -128,7 +133,8 @@ void render_screen(struct GPU *gpu)
         pos.x = cpumem[M_SPRINDEX + (i * 4) + 2];
         pos.y = cpumem[M_SPRINDEX + (i * 4) + 3];
         
-        mempos = M_SPRMEM + ((cpumem[M_SPRINDEX + i] % 64) * 8);
+        t = cpumem[M_SPRINDEX + (i * 4) + 1];
+        mempos = M_SPRMEM + (t * 8);
         insert_sprite(gpu, pos, mempos);
     } 
 

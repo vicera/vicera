@@ -35,7 +35,7 @@ struct GPU_Point
 {
     char x;
     char y;
-}
+};
 
 // GPU struct
 struct GPU
@@ -47,5 +47,10 @@ struct GPU
     // Pointer to CPU struct
     struct CPU *cpu;
 };
+
+// Function prototypes
+void init_gpu(struct GPU *gpu, struct CPU *cpu);
+void clear_screen(struct GPU *gpu);
+void render_screen(struct GPU *gpu);
 
 #endif
