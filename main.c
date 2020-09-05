@@ -17,6 +17,9 @@
 #include "gpu.h"
 #include "logging.h"
 
+#define TSCREEN_X 160
+#define TSCREEN_Y 160
+
 #define FNAME "main.c"
 struct CPU console;
 struct GPU console_gpu;
@@ -25,7 +28,11 @@ bool done;
 
 void* gpu_rendering(void *none)
 {
-    int x, y;
+    // TODO
+    // TODO Support scrolling.
+    // TODO
+    BYTE x, y;
+    BYTE sx, sy;
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
@@ -39,7 +46,7 @@ void* gpu_rendering(void *none)
     SDL_Window* win;
     SDL_Renderer* renderer;
     // Create window
-    SDL_CreateWindowAndRenderer(SCREEN_X, SCREEN_Y, 0,
+    SDL_CreateWindowAndRenderer(TSCREEN_X*2, TSCREEN_Y*2, 0,
                                 &win, &renderer);
 
     while (!done)
@@ -52,18 +59,33 @@ void* gpu_rendering(void *none)
 
         // Display on SDL
         SDL_SetRenderDrawColor(renderer, 15, 15, 15, 255);
-        for (x = 0; x < SCREEN_X; ++x)
-            for (y = 0; y < SCREEN_Y; ++y)
-                if (console_gpu.screen[x][y])
-                    SDL_RenderDrawPoint(renderer, x, y);
+        sx = console_gpu.scroll.x;
+        sy = console_gpu.scroll.y;
+
+        for (x = 0; x < TSCREEN_X; ++x)
+            for (y = 0; y < TSCREEN_Y; ++y)
+                if (console_gpu.screen[(x+sx)%0x100][(y+sy)%0x100])
+                {
+                    SDL_RenderDrawPoint(renderer, x*2, y*2);
+                    SDL_RenderDrawPoint(renderer, x*2+1, y*2);
+                    SDL_RenderDrawPoint(renderer, x*2, y*2+1);
+                    SDL_RenderDrawPoint(renderer, x*2+1, y*2+1);
+                }
 
         if (SDL_PollEvent(&event))
             if (event.type == SDL_QUIT)
+            {
                 done = true;
+                console.running = false;
+            }
 
         SDL_RenderPresent(renderer);
         SDL_Delay(1000 / 30);
     }
+    
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(win);
+    SDL_Quit();
 
     pthread_exit(NULL);
 }

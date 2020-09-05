@@ -33,8 +33,8 @@
 // Point struct
 struct GPU_Point
 {
-    char x;
-    char y;
+    BYTE x;
+    BYTE y;
 };
 
 // GPU struct

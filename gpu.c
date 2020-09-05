@@ -67,7 +67,7 @@ void insert_sprite(struct GPU *gpu, struct GPU_Point pos, WORD addr)
 {
     // Reads 8 bytes of memory to make a sprite.
     int line, i;
-    char px, py;
+    BYTE px, py;
     BYTE curbyte;
     
     px = pos.x;
@@ -78,9 +78,8 @@ void insert_sprite(struct GPU *gpu, struct GPU_Point pos, WORD addr)
         curbyte = gpu->cpu->memory[addr + line];
         for (i = 0; i < 8; ++i)
         {
-            gpu->screen[(px+i) /*% SCREEN_X*/][(py+line) /*% SCREEN_Y*/] = curbyte & 1;
-            // TODO: Fix that shit.
-            curbyte >>= 1;
+            gpu->screen[(px+i) % SCREEN_X][(py+line) % SCREEN_Y] = curbyte & 128;
+            curbyte <<= 1;
         }
     }
 }
@@ -93,6 +92,14 @@ void clear_screen(struct GPU* gpu)
     for (y = 0; y < SCREEN_Y; ++y)
         for (x = 0; x < SCREEN_X; ++x)
             gpu->screen[SCREEN_X][SCREEN_Y] = 0;
+}
+
+// struct GPU -> None
+// Update scrolling from the CPU memory
+void update_scrolling(struct GPU *gpu)
+{
+    gpu->scroll.x = gpu->cpu->memory[M_SCROLLX];
+    gpu->scroll.y = gpu->cpu->memory[M_SCROLLY];
 }
 
 // struct GPU -> None
@@ -110,12 +117,13 @@ void render_screen(struct GPU *gpu)
     //  - Clear screen
     //  - Insert tiles
     //  - Inert sprites
+    //  - Update scrolling
 
     // Clear screen.
     clear_screen(gpu);
 
     // Reads into memory and sets up the tiles.
-    for (i = 0; i < 0x100; ++i)
+    for (i = 0; i < 0x400; ++i)
     {
         pos.x = (i % (SCREEN_X / SPRSIZE)) * 8;
         pos.y = (i / (SCREEN_Y / SPRSIZE)) * 8;
@@ -138,6 +146,9 @@ void render_screen(struct GPU *gpu)
         insert_sprite(gpu, pos, mempos);
     } 
 
+    // Increment refresh
     cpumem[M_REFRESH] += 1;
-    // TODO: Finish this function and make the SDL front-end.
+
+    // Update scrolling variable
+    update_scrolling(gpu);
 }
