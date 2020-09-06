@@ -1,3 +1,10 @@
+/*
+ * VICERA by h34ting4ppliance
+ *
+ * logging.h
+ *
+ * Logging bindings
+ */
 #ifndef LOGGING_H
 #define LOGGING_H
 

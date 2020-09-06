@@ -1,3 +1,11 @@
+/*
+ * VICERA by h34ting4ppliance
+ *
+ * gpu.h
+ *
+ * This is all the bindings including memory bindings, functions and struct
+ * related to the GPU.
+ */
 #ifndef GPU_H
 #define GPU_H
 

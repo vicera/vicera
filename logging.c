@@ -1,4 +1,10 @@
-// Logging stuff
+/*
+ * VICERA by h34ting4ppliance
+ *
+ * logging.c
+ *
+ * This file contains all the logging functions to make log formatting easier.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 

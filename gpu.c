@@ -6,9 +6,6 @@
  * This file contains the GPU API to work on the
  * graphical part of the console.
  *
- * For everything related to the SDL rendering,
- * please refer to gpu_sdl.c
- *
  * Everything has been designed to be easily portable
  * with any other rendering engine.
  */

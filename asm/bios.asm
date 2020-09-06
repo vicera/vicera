@@ -1,5 +1,11 @@
-; Vicera boot BIOS
-; Not really a BIOS but just a cool animation.
+;
+; VICERA by h34ting4ppliance
+;
+; asm/bios.asm
+;
+; This is a "BIOS" showing an animation kinda similar to the Gameboy BIOS boot
+; screen.
+;
 
 ; TODO Comment out everything.
 jp main

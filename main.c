@@ -1,6 +1,8 @@
 /*
  * VICERA by h34ting4ppliance
  *
+ * main.c
+ *
  * VICERA is a fantasy console featuring
  * a monochrome 160x160 display and a simple
  * instruction set.
@@ -31,12 +33,11 @@ bool done;
 
 void* gpu_rendering(void *none)
 {
-    // TODO
-    // TODO Support scrolling.
-    // TODO
+    // Some useful variable definition
     BYTE x, y;
     BYTE sx, sy, controller;
     unsigned int k;
+    // Set it at 0 to avoid unexpected behavior
     controller = 0;
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
@@ -53,6 +54,7 @@ void* gpu_rendering(void *none)
     // Create window
     SDL_CreateWindowAndRenderer(TSCREEN_X*2, TSCREEN_Y*2, 0,
                                 &win, &renderer);
+    // Stop running if the Windows couldn't be created
     if ((!win) || (!renderer))
     {
         logging_error(FNAME, "[SDL] Window creation failed.");
@@ -61,6 +63,7 @@ void* gpu_rendering(void *none)
         exit(1);
     }   
 
+    // Main loop
     while (!done)
     {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -86,10 +89,12 @@ void* gpu_rendering(void *none)
         
         while (SDL_PollEvent(&event))
         {
+            // Detects if you quit the app
             if (event.type == SDL_QUIT)
             {
                 done = true;
                 console.running = false;
+            // Handles the controller emulation
             } else if (event.type == SDL_KEYDOWN)
             {
                 k = event.key.keysym.sym;
@@ -115,16 +120,20 @@ void* gpu_rendering(void *none)
                 
             }
         }
+        // Transfer the controller data at &FFF4
         console.memory[0xfff4] = controller;
 
+        // R e f r e s h
         SDL_RenderPresent(renderer);
         SDL_Delay(1000 / 30);
     }
     
+    // Destroy the window and the SDL Renderer once quitted.
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(win);
     SDL_Quit();
 
+    // Finish the thread.
     pthread_exit(NULL);
 }
 
@@ -145,17 +154,19 @@ int main(int argc, char **argv)
     if (argc != 2)
         print_usage();
     
-    console_ctrl.up     = SDLK_UP;
-    console_ctrl.right  = SDLK_RIGHT;
-    console_ctrl.left   = SDLK_LEFT;
-    console_ctrl.down   = SDLK_DOWN;
+    // Map controls
+    console_ctrl.up     = D_UP;
+    console_ctrl.right  = D_RIGHT;
+    console_ctrl.left   = D_LEFT;
+    console_ctrl.down   = D_DOWN;
 
-    console_ctrl.start  = SDLK_RETURN;
-    console_ctrl.select = SDLK_BACKSPACE;
+    console_ctrl.start  = D_START;
+    console_ctrl.select = D_SELECT;
     
-    console_ctrl.a      = SDLK_z;
-    console_ctrl.b      = SDLK_x;
+    console_ctrl.a      = D_A;
+    console_ctrl.b      = D_B;
 
+    // Read the ROM file
     FILE *rom = fopen(argv[1], "r");
     if (!rom)
     {
@@ -166,15 +177,21 @@ int main(int argc, char **argv)
     int c;
     done = false;
 
+    // Init CPU and GPU structs
     init_cpu(&console);
     init_gpu(&console_gpu, &console);
 
+    // Transfer the ROM Data into the system memory
     console.pc = 0x0000;
     for (int i = 0; (c=fgetc(rom)) != EOF; ++i)
         console.memory[i] = c;
     
+    // The CPU and GPU are running seperately
+    // in 2 thread. On each screen refresh,
+    // the GPU will increment &FFF0 in the RAM
     pthread_t ct;
     int rc = pthread_create(&ct, NULL, gpu_rendering, NULL);
+    // Running the CPU
     run(&console);
     done = true;
 

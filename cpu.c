@@ -1,8 +1,10 @@
 /*
  * VICERA by h34ting4ppliance
  *
- * This is the CPU part of
- * the project.
+ * cpu.c
+ *
+ * This is the CPU emulation of the Vicera.
+ * This contains all the instructions and their behavior.
  */
 #include <stdio.h>
 #include <stdlib.h>
