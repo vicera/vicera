@@ -22,9 +22,11 @@ X Add new opcodes (16-bits addressing)
  X Write GPU
    X Tile support
    X Sprite support
- - Design Controller support
-   - Buttons
-   - RAM Access
- - Implement Controller
+ X Design Controller support
+   X Buttons
+   X RAM Access
+ X Implement Controller
  / Write an assembler
  ? SPU
+
+
