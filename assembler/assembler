@@ -504,12 +504,12 @@ __     ___
    \_/  |_|\___\___|_|  \__,_| Made for testing purposes.
 -----------""")
 
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         sys.exit(1)
     prgm = open(sys.argv[1]).read()
     parsed_prgm = parse_program(prgm)
     
-    outname = sys.argv[2] if sys.argv[2] else "a.rom"
+    outname = sys.argv[2] if len(sys.argv) >= 3 else "a.rom"
 
     print('\n'.join([str(x) for x in parsed_prgm]))
     asm = AssemblyParse(parsed_prgm)
