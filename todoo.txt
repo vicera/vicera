@@ -16,12 +16,12 @@ X Add new opcodes (16-bits addressing)
    X Make the long switch-case
    X Fully implement flags
    X Write tests
- . Design GPU
-   . How will it work?
+ X Design GPU
+   X How will it work?
    X How to handle sprites and shit
- - Write GPU
-   - Tile support
-   - Sprite support
+ X Write GPU
+   X Tile support
+   X Sprite support
  - Design Controller support
    - Buttons
    - RAM Access
