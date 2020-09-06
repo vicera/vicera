@@ -11,15 +11,15 @@ I start implementing the SPU.
 
 Here is the checklist :
 
- [X] Implement CPU
- [X] Implement GPU
- [X] Implement Controller emulation
- [X] Write an SDL front-end
- [ ] Command-line arguments
- [ ] Configuration file
- [ ] SPU
- [X] Write an assembler (Not completely)
- [ ] Documentation
+ - [X] Implement CPU
+ - [X] Implement GPU
+ - [X] Implement Controller emulation
+ - [X] Write an SDL front-end
+ - [ ] Command-line arguments
+ - [ ] Configuration file
+ - [ ] SPU
+ - [X] Write an assembler (Not completely)
+ - [ ] Documentation
  
 The documentation will start being written when the checklist will be completed.  
 If you want a more detailed TODO list, refer to [this file](blob/master/todoo.txt)
