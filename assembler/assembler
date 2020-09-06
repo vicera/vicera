@@ -509,11 +509,13 @@ __     ___
     prgm = open(sys.argv[1]).read()
     parsed_prgm = parse_program(prgm)
     
+    outname = sys.argv[2] if sys.argv[2] else "a.rom"
+
     print('\n'.join([str(x) for x in parsed_prgm]))
     asm = AssemblyParse(parsed_prgm)
     
     b = asm.assemble()
-    with open("a.vicera", "wb") as f:
+    with open(outname, "wb") as f:
         f.write(bytearray(b))
         
 if __name__ == "__main__":
