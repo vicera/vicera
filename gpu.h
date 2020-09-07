@@ -19,6 +19,11 @@
 // Screen size Y
 #define SCREEN_Y    256
 
+// Display size X
+#define TSCREEN_X 160
+// Display size Y
+#define TSCREEN_Y 160
+
 // Sprites index
 #define M_SPRINDEX  0x8000
 // Tiles index
