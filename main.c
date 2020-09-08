@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
+
+#include <getopt.h>
 #include <pthread.h>
 
 #include "cpu.h"
@@ -18,11 +21,42 @@
 #include "logging.h"
 #include "sdl_gpu.h"
 
+// Version of the software
+#define VERSION "0.1.0-dev"
+
+// Filename for logging
 #define FNAME "main.c"
+
+// Usage
+#define USAGE   "Usage: vicera [OPTION]..." \
+                "\nFantasy Console inspired by the Gameboy." \
+                "\n" \
+                "\n     -r, --rom       Target ROM file to be run" \
+                "\n     -s, --start-at  Begin emulation at 0xXXXX" \
+                "\n     -c, --config    Load config file" \
+                "\n     -v, --version   Version of the VICERA" \
+                "\n     -h, --help      Print this help and exit" \
+                "\n" \
+                "\nLicensed under MIT License." \
+                "\nThis is free software, you are free and change and redistribute it." \
+                "\nWritten and Designed by Matthilde (h34ting4ppliance) Condenseau\n" \
 
 struct CPU console;
 struct GPU console_gpu;
 struct Controller console_ctrl;
+
+// Getopt arguments
+static struct option long_options[] = {
+    {"rom",      required_argument, NULL, 'r'},
+    {"start-at", required_argument, NULL, 's'},
+    {"config",   required_argument, NULL, 'c'},
+    {"force",    no_argument,       NULL, 'f'},
+    {"version",  no_argument,       NULL, 'v'},
+    {"help",     no_argument,       NULL, 'h'}
+};
+
+// ROM filename
+char* rom_name;
 
 bool done;
 
@@ -34,22 +68,68 @@ void* gpu_rendering()
     pthread_exit(NULL);
 }
 
+// Prints usge
 void print_usage()
 {
-    logging_error(FNAME, "Usage: vicera ROMFILE");
-    exit(1);
+    printf(USAGE);
+}
+
+// Prints version
+void print_version()
+{
+    printf("VICERA version %s\n", VERSION);
+}
+
+// Passing arguments
+void pass_arguments(int argc, char **argv)
+{
+    int c;
+
+    while ((c = getopt_long(argc, argv, "r:s:c:vh", long_options, NULL)) != -1)
+        switch (c)
+        {
+            case 'r':
+                rom_name = malloc(strlen(optarg) * sizeof(char));
+                strcpy(rom_name, optarg);
+                break;
+            case 's':
+                console.pc = strtol(optarg, NULL, 16);
+                break;
+            case 'c':
+                // TODO
+                logging_warn(FNAME, "-c/--config is not implemented yet.");
+                break;
+            case 'v':
+                print_version();
+                exit(0);
+                break;
+            case 'h':
+                print_usage();
+                exit(0);
+                break;
+            default:
+            case '?':
+                print_usage();
+                exit(1);
+                break;
+        }
 }
 
 int main(int argc, char **argv)
 {
+    // Arguments
+    rom_name = NULL;
+    pass_arguments(argc, argv);
+    
+    if (!rom_name)
+    {
+        logging_error(FNAME, "No ROM file specified.");
+        exit(1);
+    }
     logging_log(FNAME, "-- -- -- -- -- -- -- -- -- --");
     logging_log(FNAME, " Vicera by h34ting4ppliance!");
     logging_log(FNAME, "          have fun!");
     logging_log(FNAME, "-- -- -- -- -- -- -- -- -- --");
-    // Running program
-    
-    if (argc != 2)
-        print_usage();
     
     // Map controls
     console_ctrl.up     = D_UP;
@@ -64,7 +144,8 @@ int main(int argc, char **argv)
     console_ctrl.b      = D_B;
 
     // Read the ROM file
-    FILE *rom = fopen(argv[1], "r");
+    FILE *rom = fopen(rom_name, "r");
+    free(rom_name);
     if (!rom)
     {
         perror("Unable to open ROM: %s");

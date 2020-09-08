@@ -40,6 +40,6 @@ struct SPU
 
     // The CPU struct. Needed for memory access
     struct CPU *cpu;
-}
+};
 
 #endif

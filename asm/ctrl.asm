@@ -78,10 +78,7 @@ CheckKeypress:
 
 MainLoop:
 	pusha
-
 	mov HL, 0x8246
-	mov A, (0xfff4)
-	mov B, A
 
 	mov D, 0x80
 	call CheckKeypress
