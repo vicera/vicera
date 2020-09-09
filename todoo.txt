@@ -27,13 +27,16 @@ X Add new opcodes (16-bits addressing)
    X RAM Access
  X Implement Controller
  / Write an assembler
- ? SPU
- - Configuration file
-    - Format
-    - Implementation
- . Command-line arguments
+ . SPU
+   X Design
+   X Implementation
+   ? SDL Front-end
+ X Configuration file
+    X Format
+    X Implementation
+ X Command-line arguments
     X Designing arguments
-    - Implementation
+    X Implementation
  - Documentation
     - Main usage
     - Memory binding

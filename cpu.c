@@ -24,20 +24,20 @@
 
 // String -> None
 // Prints log.
-void plog(const char* msg)
+static void plog(const char* msg)
 {
     logging_log(FNAME, msg);
 }
 
 // String -> None
-void pwarn(const char* msg)
+static void pwarn(const char* msg)
 {
     logging_warn(FNAME, msg);
 }
 
 // String -> None
 // Returns an error then exit with status 1
-void die(const char* msg)
+static void die(const char* msg)
 {
     logging_error(FNAME, msg);
     // perror(msg);
@@ -48,13 +48,15 @@ void die(const char* msg)
 // String -> None
 // Returns an error then exit with status 1
 // in addition of a perror() call
-void pdie(const char* msg)
+/*
+static void pdie(const char* msg)
 {
     logging_error(FNAME, msg);
     perror(msg);
 
     exit(1);
 }
+*/
 
 // struct CPU, String -> None
 // Halts the CPU with a message.

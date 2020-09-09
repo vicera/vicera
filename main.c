@@ -20,6 +20,7 @@
 #include "controller.h"
 #include "logging.h"
 #include "sdl_gpu.h"
+#include "config.h"
 
 // Version of the software
 #define VERSION "0.1.0-dev"
@@ -80,6 +81,29 @@ void print_version()
     printf("VICERA version %s\n", VERSION);
 }
 
+// Loading configuration
+void config_handler(const char* name, const char* value)
+{
+    #define MATCH(y) strcmp(name, y) == 0
+    
+    if (MATCH("controller.up"))
+        console_ctrl.up = atoi(value);
+    else if (MATCH("controller.right"))
+        console_ctrl.right = atoi(value);
+    else if (MATCH("controller.down"))
+        console_ctrl.down = atoi(value);
+    else if (MATCH("controller.left"))
+        console_ctrl.left = atoi(value);
+    else if (MATCH("controller.a"))
+        console_ctrl.a = atoi(value);
+    else if (MATCH("controller.b"))
+        console_ctrl.b = atoi(value);
+    else if (MATCH("controller.start"))
+        console_ctrl.start = atoi(value);
+    else if (MATCH("controller.select"))
+        console_ctrl.select = atoi(value);
+}
+
 // Passing arguments
 void pass_arguments(int argc, char **argv)
 {
@@ -96,8 +120,7 @@ void pass_arguments(int argc, char **argv)
                 console.pc = strtol(optarg, NULL, 16);
                 break;
             case 'c':
-                // TODO
-                logging_warn(FNAME, "-c/--config is not implemented yet.");
+                parse_config(optarg, &config_handler);
                 break;
             case 'v':
                 print_version();
@@ -117,6 +140,18 @@ void pass_arguments(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
+    // Map controls
+    console_ctrl.up     = D_UP;
+    console_ctrl.right  = D_RIGHT;
+    console_ctrl.left   = D_LEFT;
+    console_ctrl.down   = D_DOWN;
+
+    console_ctrl.start  = D_START;
+    console_ctrl.select = D_SELECT;
+    
+    console_ctrl.a      = D_A;
+    console_ctrl.b      = D_B;
+    
     // Arguments
     rom_name = NULL;
     pass_arguments(argc, argv);
@@ -131,17 +166,6 @@ int main(int argc, char **argv)
     logging_log(FNAME, "          have fun!");
     logging_log(FNAME, "-- -- -- -- -- -- -- -- -- --");
     
-    // Map controls
-    console_ctrl.up     = D_UP;
-    console_ctrl.right  = D_RIGHT;
-    console_ctrl.left   = D_LEFT;
-    console_ctrl.down   = D_DOWN;
-
-    console_ctrl.start  = D_START;
-    console_ctrl.select = D_SELECT;
-    
-    console_ctrl.a      = D_A;
-    console_ctrl.b      = D_B;
 
     // Read the ROM file
     FILE *rom = fopen(rom_name, "r");
