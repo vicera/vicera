@@ -15,8 +15,8 @@ Here is the checklist :
  - [X] Implement GPU
  - [X] Implement Controller emulation
  - [X] Write an SDL front-end
- - [ ] Command-line arguments
- - [ ] Configuration file
+ - [X] Command-line arguments
+ - [X] Configuration file
  - [ ] SPU
  - [X] Write an assembler (Not completely)
  - [ ] Documentation
