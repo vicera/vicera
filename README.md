@@ -22,7 +22,7 @@ Here is the checklist :
  - [ ] Documentation
  
 The documentation will start being written when the checklist will be completed.  
-If you want a more detailed TODO list, refer to [this file](blob/master/todoo.txt)
+If you want a more detailed TODO list, refer to [this file](todoo.txt)
 
 ## Building
 
