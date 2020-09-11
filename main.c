@@ -23,7 +23,7 @@
 #include "config.h"
 
 // Version of the software
-#define VERSION "0.1.0-dev"
+#define VERSION "1.0.0-01"
 
 // Filename for logging
 #define FNAME "main.c"

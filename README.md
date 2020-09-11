@@ -19,7 +19,6 @@ Here is the checklist :
  - [X] Configuration file
  - [ ] SPU
  - [X] Write an assembler (Not completely)
- - [ ] Documentation
  
 The documentation will start being written when the checklist will be completed.  
 If you want a more detailed TODO list, refer to [this file](todoo.txt)

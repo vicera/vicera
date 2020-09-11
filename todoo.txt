@@ -37,12 +37,3 @@ X Add new opcodes (16-bits addressing)
  X Command-line arguments
     X Designing arguments
     X Implementation
- - Documentation
-    - Main usage
-    - Memory binding
-    - CPU
-    - GPU
-    - SPU
-    - Controller
-    ? Tutorials
-    ? ASM Cheatsheet
