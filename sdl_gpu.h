@@ -12,6 +12,13 @@
 #include "controller.h"
 #include <stdbool.h>
 
-void start_gpu_rendering(struct GPU *gpu, struct Controller *ctrl, bool *done);
+struct SDL_GPUState
+{
+    bool ready;
+    bool done;
+};
+
+void init_sdlgpu(struct SDL_GPUState *state);
+void start_gpu_rendering(struct GPU *gpu, struct Controller *ctrl, struct SDL_GPUState *state);
 
 #endif

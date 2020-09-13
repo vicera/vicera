@@ -45,6 +45,7 @@
 struct CPU console;
 struct GPU console_gpu;
 struct Controller console_ctrl;
+struct SDL_GPUState console_gpu_state;
 
 // Getopt arguments
 static struct option long_options[] = {
@@ -63,7 +64,7 @@ bool done;
 
 void* gpu_rendering()
 {
-    start_gpu_rendering(&console_gpu, &console_ctrl, &done);
+    start_gpu_rendering(&console_gpu, &console_ctrl, &console_gpu_state);
     
     // Finish the thread.
     pthread_exit(NULL);
@@ -182,6 +183,7 @@ int main(int argc, char **argv)
     // Init CPU and GPU structs
     init_cpu(&console);
     init_gpu(&console_gpu, &console);
+    init_sdlgpu(&console_gpu_state);
 
     // Transfer the ROM Data into the system memory
     console.pc = 0x0000;
@@ -194,6 +196,9 @@ int main(int argc, char **argv)
     pthread_t ct;
     pthread_create(&ct, NULL, gpu_rendering, NULL);
     
+    // Wait for SDL to init
+    while (!console_gpu_state.ready);
+
     // Running the CPU
     run(&console);
     done = true;

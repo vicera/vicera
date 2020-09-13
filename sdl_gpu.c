@@ -20,7 +20,14 @@
 
 #define FNAME "sdl_gpu.c"
 
-void start_gpu_rendering(struct GPU *gpu, struct Controller *ctrl, bool *done)
+// Inits SDL GPU struct
+void init_sdlgpu(struct SDL_GPUState *state)
+{
+    state->done     = false;
+    state->ready    = false;
+}
+
+void start_gpu_rendering(struct GPU *gpu, struct Controller *ctrl, struct SDL_GPUState *state)
 {
     // Take the CPU from the GPU
     struct CPU* cpu = gpu->cpu;
@@ -56,10 +63,13 @@ void start_gpu_rendering(struct GPU *gpu, struct Controller *ctrl, bool *done)
         perror("SDL Error");
 
         exit(1);
-    }   
+    }
+
+    // Ready
+    state->ready = true;
 
     // Main loop
-    while (!(*done))
+    while (!(state->done))
     {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
@@ -87,7 +97,7 @@ void start_gpu_rendering(struct GPU *gpu, struct Controller *ctrl, bool *done)
             // Detects if you quit the app
             if (event.type == SDL_QUIT)
             {
-                *done = true;
+                state->done = true;
                 cpu->running = false;
             // Handles the controller emulation
             } else if (event.type == SDL_KEYDOWN)
@@ -123,7 +133,7 @@ void start_gpu_rendering(struct GPU *gpu, struct Controller *ctrl, bool *done)
         SDL_Delay(1000 / 30);
     }
 
-    *done = true;    
+    state->done = true;    
     // Destroy the window and the SDL Renderer once quitted.
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(win);

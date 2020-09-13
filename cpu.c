@@ -130,13 +130,53 @@ BYTE *get_register(struct CPU* cpu, int reg)
     return NULL;
 }
 
-/*
-void update_flags(struct CPU* cpu, BYTE before, BYTE after)
+// Updates the zero flag
+void update_zflag(struct CPU* cpu, BYTE byte_a)
 {
-    // TODO: Add carry flag support.
-    cpu->flags |= (after == 0x00) * Z_FLAG;
+    cpu->flags |= (byte_a == 0x00) * Z_FLAG;
 }
-*/
+
+// Updates the flag on an arithmetic operation
+// before -> Previous value
+// after -> Actual value
+// id -> Increment or Decrement?
+void update_flags(struct CPU* cpu, BYTE before, BYTE after, char id)
+{
+    // Carry flag
+    switch (id)
+    {
+        case '+':
+            cpu->flags |= (before > after) * C_FLAG;
+            break;
+        case '-':
+            cpu->flags |= (after < before) * C_FLAG;
+            break;
+    }
+    
+    update_zflag(cpu, after);
+}
+
+// Flag add
+// Adds two integer with flag updating
+BYTE flag_add(struct CPU* cpu, BYTE byte_a, BYTE byte_b)
+{
+    BYTE before = byte_a;
+    BYTE after = byte_a + byte_b;
+
+    update_flags(cpu, before, after, '+');
+    return after;
+}
+
+// Flag sub
+// Subs two integers with flag updating
+BYTE flag_sub(struct CPU* cpu, BYTE byte_a, BYTE byte_b)
+{
+    BYTE before = byte_a;
+    BYTE after = byte_a - byte_b;
+
+    update_flags(cpu, before, after, '-');
+    return after;
+}
 
 // struct CPU -> None
 // inits the CPU
@@ -208,26 +248,26 @@ void mov_sp(struct CPU* cpu, WORD addr)
 void add_r(struct CPU* cpu, int reg_a)
 {
     BYTE *r = get_register(cpu, reg_a);
-    cpu->registers[REG_A] += *r;
+    cpu->registers[REG_A] = flag_add(cpu->registers[REG_A], *r);
 }
 
 // add n
 void add_n(struct CPU* cpu, BYTE byte_a)
 {
-    cpu->registers[REG_A] += byte_a;
+    cpu->registers[REG_A] = flag_add(cpu->registers[REG_A], byte_a);
 }
 
 // sub r
 void sub_r(struct CPU* cpu, int reg_a)
 {
     BYTE *r = get_register(cpu, reg_a);
-    cpu->registers[REG_A] -= *r;
+    cpu->registers[REG_A] = flag_sub(cpu->registers[REG_A], *r);
 }
 
 // sub n
 void sub_n(struct CPU* cpu, BYTE byte_a)
 {
-    cpu->registers[REG_A] -= byte_a;
+    cpu->registers[REG_A] = flag_sub(cpu->registers[REG_A], byte_a);
 }
 
 // and r
