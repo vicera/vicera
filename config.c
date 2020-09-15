@@ -104,7 +104,7 @@ void parse_config(const char* filename,
     // Load the file
     char* cfg = load_file_into_string(filename);
     // Some useful functions
-    char *token, **saveptr, *name, *value;
+    char *token, *saveptr, *name, *value;
 
     // Parsing loop
     token = strtok_r(cfg, "\n", &saveptr);
@@ -123,7 +123,6 @@ void parse_config(const char* filename,
         }
         
         token = strtok_r(NULL, "\n", &saveptr);
-        // TODO: Test the new configuration code.
     }
 
     free(cfg);

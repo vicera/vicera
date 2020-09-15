@@ -6,3 +6,5 @@ EXECNAME = vicera
 vicera: $(FILES)
 		$(CC) $(FILES) $(ARGS) $(LIBS) -o $(EXECNAME)
 
+test: cpu.c logging.c tests.c
+		$(CC) cpu.c logging.c tests.c -lcmocka -o vicera-testing

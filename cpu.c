@@ -248,26 +248,30 @@ void mov_sp(struct CPU* cpu, WORD addr)
 void add_r(struct CPU* cpu, int reg_a)
 {
     BYTE *r = get_register(cpu, reg_a);
-    cpu->registers[REG_A] = flag_add(cpu->registers[REG_A], *r);
+    cpu->registers[REG_A] = flag_add(
+            cpu, cpu->registers[REG_A], *r);
 }
 
 // add n
 void add_n(struct CPU* cpu, BYTE byte_a)
 {
-    cpu->registers[REG_A] = flag_add(cpu->registers[REG_A], byte_a);
+    cpu->registers[REG_A] = flag_add(
+            cpu, cpu->registers[REG_A], byte_a);
 }
 
 // sub r
 void sub_r(struct CPU* cpu, int reg_a)
 {
     BYTE *r = get_register(cpu, reg_a);
-    cpu->registers[REG_A] = flag_sub(cpu->registers[REG_A], *r);
+    cpu->registers[REG_A] = flag_sub(
+            cpu, cpu->registers[REG_A], *r);
 }
 
 // sub n
 void sub_n(struct CPU* cpu, BYTE byte_a)
 {
-    cpu->registers[REG_A] = flag_sub(cpu->registers[REG_A], byte_a);
+    cpu->registers[REG_A] = flag_sub(
+            cpu, cpu->registers[REG_A], byte_a);
 }
 
 // and r
