@@ -50,8 +50,10 @@ typedef enum {
     // mov r, (HL)
     MOV_AP, MOV_BP, MOV_CP, MOV_DP, MOV_EP, MOV_HP, MOV_LP,
     
-    // mov SP, nn
-    MOV_SPNN,
+    // mov SP, nn/HL
+    MOV_SPNN, MOV_SPHL,
+    // mov HL, SP
+    MOV_HLSP,
 
     // mov a, (BC/DE/nn)
     MOV_ABC, MOV_ADE, MOV_ANN,
@@ -124,8 +126,13 @@ typedef enum {
 
     // This instruction is meant to let the machine sleep
     // for a very short time to avoid that your fans go brrr
-    SLP
+    SLP,
 
+    // SWAP A, r
+    SWAP_A, SWAP_B, SWAP_C, SWAP_D, SWAP_E, SWAP_H, SWAP_L, SWAP_P,
+
+    // SWAP HL, rr
+    SWAP_HL, SWAP_BC, SWAP_DE
 } Instructions;
 
 // Registers

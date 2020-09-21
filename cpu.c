@@ -1,3 +1,6 @@
+// TODO: Test the flag support.
+// TODO: Test swap opcodes.
+
 /*
  * VICERA by h34ting4ppliance
  *
@@ -244,6 +247,16 @@ void mov_sp(struct CPU* cpu, WORD addr)
     cpu->sp = addr;
 }
 
+// mov HL, SP
+void mov_hlsp(struct CPU* cpu)
+{
+    BYTE h = cpu->sp / 0x100;
+    BYTE l = cpu->sp % 0x100;
+
+    cpu->registers[REG_H] = h;
+    cpu->registers[REG_L] = l;
+}
+
 // add r
 void add_r(struct CPU* cpu, int reg_a)
 {
@@ -476,6 +489,34 @@ void mem_ret(struct CPU* cpu)
     mem_jump(cpu, -1, addr + 1);
 }
 
+// swap A, r
+void swap_r(struct CPU* cpu, int reg_a)
+{
+    BYTE *a = &(cpu->registers[REG_A]);
+    BYTE *b = get_register(cpu, reg_a);
+
+    BYTE c = *a;
+    *a = *b;
+    *b = c;
+}
+
+// swap HL, rr
+void swap_rr(struct CPU* cpu, int reg_a)
+{
+    BYTE *ha, *la, *hb, *lb, c;
+    get_16reg(cpu, reg_a, &ha, &la);
+    hb = &(cpu->registers[REG_H]);
+    lb = &(cpu->registers[REG_L]);
+
+    c = *ha;
+    *ha = *hb;
+    *hb = c;
+    
+    c = *la;
+    *la = *lb;
+    *lb = c;
+}
+
 // DUMP FUNCTIONS FOR DEBUGGING
 // dump registers
 void dump_registers(struct CPU* cpu)
@@ -648,6 +689,13 @@ void execute(struct CPU *cpu)
         case MOV_SPNN:
             mov_sp(cpu, memword(cpu));
             jmpret = 1;
+            break;
+        case MOV_SPHL:
+            mov_sp(cpu, btoword(cpu->registers[REG_H],
+                                cpu->registers[REG_L]));
+            break;
+        case MOV_HLSP:
+            mov_hlsp(cpu);
             break;
 
         case MOV_ABC:
@@ -871,6 +919,25 @@ void execute(struct CPU *cpu)
         
         case SLP:
             nanosleep((struct timespec[]){{0, 3000L}}, NULL);
+            break;
+        
+        case SWAP_A:
+        case SWAP_B:
+        case SWAP_C:
+        case SWAP_D:
+        case SWAP_E:
+        case SWAP_H:
+        case SWAP_L:
+            swap_r(cpu, instr - SWAP_A);
+            break;
+        case SWAP_P:
+            swap_r(cpu, REG_HL);
+            break;
+        
+        case SWAP_HL:
+        case SWAP_BC:
+        case SWAP_DE:
+            swap_rr(cpu, instr - SWAP_HL + REG_HL);
             break;
 
         default:
