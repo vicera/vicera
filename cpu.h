@@ -1,9 +1,11 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include <stdint.h>
+
 // types definitions
-typedef unsigned char BYTE;
-typedef unsigned short int WORD;
+typedef uint8_t  BYTE;
+typedef uint16_t WORD;
 
 // Misc
 #define Z_FLAG  0x01
