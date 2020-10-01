@@ -5,26 +5,26 @@
 ;
 ; This is a demo file to test the controller.
 ;
-jp main
+jp Main
 
 Tiles:
-	db 0b00000000
-	db 0b00111100
-	db 0b01100010
-	db 0b01100010
-	db 0b01100010
-	db 0b01100010
-	db 0b00111100
-	db 0b00000000
+	.db 0b00000000
+	.db 0b00111100
+	.db 0b01100010
+	.db 0b01100010
+	.db 0b01100010
+	.db 0b01100010
+	.db 0b00111100
+	.db 0b00000000
 
-	db 0b00000000
-	db 0b00011000
-	db 0b00111000
-	db 0b01111000
-	db 0b00011000
-	db 0b00011000
-	db 0b01111110
-	db 0b00000000
+	.db 0b00000000
+	.db 0b00011000
+	.db 0b00111000
+	.db 0b01111000
+	.db 0b00011000
+	.db 0b00011000
+	.db 0b01111110
+	.db 0b00000000
 Tiles_E:
 
 LoadTiles:

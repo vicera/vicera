@@ -37,3 +37,8 @@ X Add new opcodes (16-bits addressing)
  X Command-line arguments
     X Designing arguments
     X Implementation
+ - FIFO extension
+    - FIFO communication between 3rd party software and VICERA
+    - Parsing
+    - Executing FIFO request
+    - Send answer

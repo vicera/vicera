@@ -7,6 +7,7 @@
  * a monochrome 160x160 display and a simple
  * instruction set.
  */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -22,8 +23,15 @@
 #include "sdl_gpu.h"
 #include "config.h"
 
+#if FIFOEXT
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include "fifo.h"
+#endif
+
 // Version of the software
-#define VERSION "1.0.0-01"
+#define VERSION "devbuild"
 
 // Filename for logging
 #define FNAME "main.c"
@@ -46,6 +54,8 @@ struct CPU console;
 struct GPU console_gpu;
 struct Controller console_ctrl;
 struct SDL_GPUState console_gpu_state;
+char* fifoname = NULL;
+bool fifo_enabled = false;
 
 // Getopt arguments
 static struct option long_options[] = {
@@ -61,6 +71,30 @@ static struct option long_options[] = {
 char* rom_name;
 
 bool done;
+
+#if FIFOEXT
+void* fifo_extension()
+{
+    if (fifoname == NULL || !fifo_enabled)
+        pthread_exit(NULL);
+    int err = mkfifo(fifoname, 0600);
+    if (err)
+    {
+        perror("FIFO Error");
+        exit(1);
+    }
+    
+    // Wait for the CPU to get ready.
+    while (!console.running);
+
+    logging_log(FNAME, "FIFO Enabled.");
+    while (console.running)
+        receive_from_fifo(&console, fifoname);
+
+    // Finish the thread.
+    pthread_exit(NULL);
+}
+#endif
 
 void* gpu_rendering()
 {
@@ -103,6 +137,21 @@ void config_handler(const char* name, const char* value)
         console_ctrl.start = atoi(value);
     else if (MATCH("controller.select"))
         console_ctrl.select = atoi(value);
+    else if (MATCH("fifo.enabled"))
+    {
+        if (strcmp("true", value) == 0)
+            fifo_enabled = true;
+    }
+    else if (MATCH("fifo.filename"))
+    {
+        fifoname = (char*)malloc(sizeof(char) * (strlen(value) + 1));
+        if (!fifoname)
+        {
+            perror("Unable to malloc");
+            exit(1);
+        }
+        strcpy(fifoname, value);
+    }
 }
 
 // Passing arguments
@@ -195,13 +244,26 @@ int main(int argc, char **argv)
     // the GPU will increment &FFF0 in the RAM
     pthread_t ct;
     pthread_create(&ct, NULL, gpu_rendering, NULL);
+    #if FIFOEXT
+    pthread_create(&ct, NULL, fifo_extension, NULL);
+    #endif
     
     // Wait for SDL to init
     while (!console_gpu_state.ready);
 
     // Running the CPU
     run(&console);
+    console.running = false;
     done = true;
-
+    
+    #if FIFOEXT
+    // Remove the FIFO
+    int err = remove(fifoname);
+    if (err)
+    {
+        perror("Error");
+        logging_warn(FNAME, "FIFO hasn't been removed properly.");
+    }
+    #endif
     return 0;
 }
