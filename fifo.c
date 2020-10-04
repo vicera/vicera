@@ -95,6 +95,7 @@ static struct FIFOCommand parse_line(char* line)
 
     token = strtok_r(line, " \t", &saveptr);
     cmd.inst = get_instr(token);
+    printf("\"%s\"\n", token);
     if (cmd.inst == F_NONE ||
         cmd.inst == F_REGDMP)
         return cmd;
@@ -212,6 +213,7 @@ void receive_from_fifo(struct CPU* cpu, const char* filename)
             free(tmp);
         }
         // Free to allocate it again
+        // TODO: Fix this dumb shit
         free_buff(&linebuf);
     }
 
@@ -223,7 +225,6 @@ void receive_from_fifo(struct CPU* cpu, const char* filename)
     if (!f)
         die("Unable to open file for writing");
     
-    puts(result);
     fputs(result, f);
 
     // Free and close

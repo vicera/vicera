@@ -24,6 +24,7 @@
 #include "config.h"
 
 #if FIFOEXT
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -73,26 +74,10 @@ char* rom_name;
 bool done;
 
 #if FIFOEXT
-void* fifo_extension()
+void fifo_extension(int sig)
 {
-    if (fifoname == NULL || !fifo_enabled)
-        pthread_exit(NULL);
-    int err = mkfifo(fifoname, 0600);
-    if (err)
-    {
-        perror("FIFO Error");
-        exit(1);
-    }
-    
-    // Wait for the CPU to get ready.
-    while (!console.running);
-
-    logging_log(FNAME, "FIFO Enabled.");
-    while (console.running)
-        receive_from_fifo(&console, fifoname);
-
-    // Finish the thread.
-    pthread_exit(NULL);
+    receive_from_fifo(&console, fifoname);
+    signal(sig, fifo_extension);
 }
 #endif
 
@@ -245,7 +230,11 @@ int main(int argc, char **argv)
     pthread_t ct;
     pthread_create(&ct, NULL, gpu_rendering, NULL);
     #if FIFOEXT
-    pthread_create(&ct, NULL, fifo_extension, NULL);
+    if (!mkfifo(fifoname, 0666))
+    {
+        logging_log(FNAME, "FIFO Enabled!");
+        signal(SIGUSR1, fifo_extension);
+    }
     #endif
     
     // Wait for SDL to init
