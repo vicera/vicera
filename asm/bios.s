@@ -117,8 +117,9 @@ MainLoop:
 	
 	mov A, (0xfff2)
 	cp 0x00
-	jz MainLoop_A
-	jp MainLoop_B
+	; jz MainLoop_A
+	jz MainLoop_E
+    jp MainLoop_B
 
 	MainLoop_A:
 		mov A, (0xfff0)

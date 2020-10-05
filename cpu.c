@@ -1,5 +1,5 @@
 // TODO: Test the flag support.
-// TODO: Test swap opcodes.
+// TODO: Get the 16-bits arithmetic done.
 
 /*
  * VICERA by h34ting4ppliance
@@ -272,6 +272,29 @@ void add_n(struct CPU* cpu, BYTE byte_a)
             cpu, cpu->registers[REG_A], byte_a);
 }
 
+// add rr
+void add_rr(struct CPU* cpu, int reg_a)
+{
+    BYTE *ah, *al, *bh, *bl;
+    get_16reg(cpu, REG_HL, &ah, &al);
+    get_16reg(cpu, reg_a, &bh, &bl)
+
+    WORD sum = btoword(*ah, *al) + btoword(*bh, *bl);
+    *ah = sum / 0x100;
+    *al = sum % 0x100;
+}
+
+// add rrnn
+void add_nn(struct CPU* cpu, WORD value)
+{
+    BYTE *ah, *al;
+    get_16reg(cpu, REG_HL, &ah, &al);
+
+    WORD sum = btoword(*ah, *al) + value;
+    *ah = sum / 0x100;
+    *al = sum % 0x100;
+}
+
 // sub r
 void sub_r(struct CPU* cpu, int reg_a)
 {
@@ -285,6 +308,29 @@ void sub_n(struct CPU* cpu, BYTE byte_a)
 {
     cpu->registers[REG_A] = flag_sub(
             cpu, cpu->registers[REG_A], byte_a);
+}
+
+// sub rr
+void sub_rr(struct CPU* cpu, int reg_a)
+{
+    BYTE *ah, *al, *bh, *bl;
+    get_16reg(cpu, REG_HL, &ah, &al);
+    get_16reg(cpu, reg_a, &bh, &bl)
+
+    WORD sum = btoword(*ah, *al) - btoword(*bh, *bl);
+    *ah = sum / 0x100;
+    *al = sum % 0x100;
+}
+
+// sub rrnn
+void sub_nn(struct CPU* cpu, WORD value)
+{
+    BYTE *ah, *al;
+    get_16reg(cpu, REG_HL, &ah, &al);
+
+    WORD sum = btoword(*ah, *al) - value;
+    *ah = sum / 0x100;
+    *al = sum % 0x100;
 }
 
 // and r

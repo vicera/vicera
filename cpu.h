@@ -70,9 +70,10 @@ typedef enum {
     // ALU operations
     // ADD
     ADD_A, ADD_B, ADD_C, ADD_D, ADD_E, ADD_H, ADD_L, ADD_N, ADD_P,
-
+    ADD_HL, ADD_BC, ADD_DE, ADD_NN,
     // SUB
     SUB_A, SUB_B, SUB_C, SUB_D, SUB_E, SUB_H, SUB_L, SUB_N, SUB_P,
+    SUB_HL, SUB_BC, SUB_DE, SUB_NN,
 
     // AND
     AND_A, AND_B, AND_C, AND_D, AND_E, AND_H, AND_L, AND_N, AND_P,
@@ -136,7 +137,11 @@ typedef enum {
     SWAP_A, SWAP_B, SWAP_C, SWAP_D, SWAP_E, SWAP_H, SWAP_L, SWAP_P,
 
     // SWAP HL, rr
-    SWAP_HL, SWAP_BC, SWAP_DE
+    SWAP_HL, SWAP_BC, SWAP_DE,
+
+    // RepXX
+    // TODO: Implement the REP commands
+    REPZ, REPNZ, REPC, REPNC
 } Instructions;
 
 // Registers
