@@ -76,7 +76,7 @@ void halt(struct CPU *cpu, const char *msg)
 // BYTE, BYTE -> WORD
 // converts two bytes into a word.
 // example : btoword(0x12, 0x34) produces 0x1234
-WORD btoword(BYTE byte_a, BYTE byte_b)
+static WORD btoword(BYTE byte_a, BYTE byte_b)
 {
     return (byte_a * 0x100) + byte_b;
 }
@@ -84,7 +84,7 @@ WORD btoword(BYTE byte_a, BYTE byte_b)
 // struct *CPU -> WORD
 // returns a 16-bit value of the two following bytes
 // in the RAM from (PC + 1)
-WORD memword(struct CPU *cpu)
+static WORD memword(struct CPU *cpu)
 {
     return btoword(cpu->memory[cpu->pc + 1],
                    cpu->memory[cpu->pc + 2]);
@@ -92,7 +92,7 @@ WORD memword(struct CPU *cpu)
 
 // BYTE *h, BYTE *l -> None
 // Points a 16-bits register (HL, AB, CD)
-void get_16reg(struct CPU* cpu, int reg_a, 
+static void get_16reg(struct CPU* cpu, int reg_a, 
                BYTE **h, BYTE **l)
 {
     switch (reg_a)
@@ -114,7 +114,7 @@ void get_16reg(struct CPU* cpu, int reg_a,
 
 // struct CPU, Integer -> Integer
 // If the register is not a thing, return -1
-BYTE *get_register(struct CPU* cpu, int reg)
+static BYTE *get_register(struct CPU* cpu, int reg)
 {
     if (reg >= 0 && reg < REGSIZE)
         return &(cpu->registers[reg]);
@@ -134,7 +134,7 @@ BYTE *get_register(struct CPU* cpu, int reg)
 }
 
 // Updates the zero flag
-void update_zflag(struct CPU* cpu, BYTE byte_a)
+static void update_zflag(struct CPU* cpu, WORD byte_a)
 {
     cpu->flags |= (byte_a == 0x00) * Z_FLAG;
 }
@@ -143,8 +143,10 @@ void update_zflag(struct CPU* cpu, BYTE byte_a)
 // before -> Previous value
 // after -> Actual value
 // id -> Increment or Decrement?
-void update_flags(struct CPU* cpu, BYTE before, BYTE after, char id)
+static void update_flags(struct CPU* cpu, WORD before, WORD after, char id)
 {
+    // Reset flag
+    cpu->flags = 0;
     // Carry flag
     switch (id)
     {
@@ -161,7 +163,7 @@ void update_flags(struct CPU* cpu, BYTE before, BYTE after, char id)
 
 // Flag add
 // Adds two integer with flag updating
-BYTE flag_add(struct CPU* cpu, BYTE byte_a, BYTE byte_b)
+static BYTE flag_add(struct CPU* cpu, BYTE byte_a, BYTE byte_b)
 {
     BYTE before = byte_a;
     BYTE after = byte_a + byte_b;
@@ -172,7 +174,7 @@ BYTE flag_add(struct CPU* cpu, BYTE byte_a, BYTE byte_b)
 
 // Flag sub
 // Subs two integers with flag updating
-BYTE flag_sub(struct CPU* cpu, BYTE byte_a, BYTE byte_b)
+static BYTE flag_sub(struct CPU* cpu, BYTE byte_a, BYTE byte_b)
 {
     BYTE before = byte_a;
     BYTE after = byte_a - byte_b;
@@ -277,9 +279,11 @@ void add_rr(struct CPU* cpu, int reg_a)
 {
     BYTE *ah, *al, *bh, *bl;
     get_16reg(cpu, REG_HL, &ah, &al);
-    get_16reg(cpu, reg_a, &bh, &bl)
+    get_16reg(cpu, reg_a, &bh, &bl);
 
     WORD sum = btoword(*ah, *al) + btoword(*bh, *bl);
+    update_flags(cpu, btoword(*ah, *al), sum, '+');
+    
     *ah = sum / 0x100;
     *al = sum % 0x100;
 }
@@ -291,6 +295,8 @@ void add_nn(struct CPU* cpu, WORD value)
     get_16reg(cpu, REG_HL, &ah, &al);
 
     WORD sum = btoword(*ah, *al) + value;
+    update_flags(cpu, btoword(*ah, *al), sum, '+');
+
     *ah = sum / 0x100;
     *al = sum % 0x100;
 }
@@ -315,9 +321,11 @@ void sub_rr(struct CPU* cpu, int reg_a)
 {
     BYTE *ah, *al, *bh, *bl;
     get_16reg(cpu, REG_HL, &ah, &al);
-    get_16reg(cpu, reg_a, &bh, &bl)
+    get_16reg(cpu, reg_a, &bh, &bl);
 
     WORD sum = btoword(*ah, *al) - btoword(*bh, *bl);
+    update_flags(cpu, btoword(*ah, *al), sum, '-');
+    
     *ah = sum / 0x100;
     *al = sum % 0x100;
 }
@@ -329,6 +337,8 @@ void sub_nn(struct CPU* cpu, WORD value)
     get_16reg(cpu, REG_HL, &ah, &al);
 
     WORD sum = btoword(*ah, *al) - value;
+    update_flags(cpu, btoword(*ah, *al), sum, '-');
+    
     *ah = sum / 0x100;
     *al = sum % 0x100;
 }
@@ -784,6 +794,15 @@ void execute(struct CPU *cpu)
         case ADD_P:
             add_r(cpu, REG_HL);
             break;
+        case ADD_HL:
+        case ADD_BC:
+        case ADD_DE:
+            add_rr(cpu, instr - ADD_HL + REG_HL);
+            break;
+        case ADD_NN:
+            add_nn(cpu, memword(cpu));
+            jmpret = 1;
+            break;
 
         case SUB_A:
         case SUB_B:
@@ -800,7 +819,16 @@ void execute(struct CPU *cpu)
         case SUB_P:
             sub_r(cpu, REG_HL);
             break;
-
+        case SUB_HL:
+        case SUB_BC:
+        case SUB_DE:
+            sub_rr(cpu, instr - SUB_HL + REG_HL);
+            break;
+        case SUB_NN:
+            sub_nn(cpu, memword(cpu));
+            jmpret = 1;
+            break;
+        
         case AND_A:
         case AND_B:
         case AND_C:
