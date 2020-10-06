@@ -904,7 +904,7 @@ void execute(struct CPU *cpu)
         case DEC_HL:
         case DEC_BC:
         case DEC_DE:
-            dec_rr(cpu, instr - INC_HL + REG_HL);
+            dec_rr(cpu, instr - DEC_HL + REG_HL);
             break;
 
         case SL_A:
