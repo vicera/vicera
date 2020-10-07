@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+// CPU Clock register
+// increments on each cycle.
+#define CLOCKREG 0xfff5
+
 // types definitions
 typedef uint8_t  BYTE;
 typedef uint16_t WORD;
