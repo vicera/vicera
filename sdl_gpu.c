@@ -56,6 +56,7 @@ void start_gpu_rendering(struct GPU *gpu, struct Controller *ctrl, struct SDL_GP
     // Create window
     SDL_CreateWindowAndRenderer(TSCREEN_X*2, TSCREEN_Y*2, 0,
                                 &win, &renderer);
+    SDL_SetWindowsTitle(*win, "VICERA");
     // Stop running if the Windows couldn't be created
     if ((!win) || (!renderer))
     {
