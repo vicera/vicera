@@ -1023,7 +1023,7 @@ void execute(struct CPU *cpu)
     if (jmpret)
         cpu->pc += 2;
     
-    cpu->memory[CLOCKREG] = 1 + (jmpret * 2);
+    cpu->memory[CLOCKREG] += 1 + (jmpret * 2);
 }
 
 // struct CPU -> None
