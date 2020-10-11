@@ -88,7 +88,7 @@ void clear_screen(struct GPU* gpu)
     int x, y;
     for (y = 0; y < SCREEN_Y; ++y)
         for (x = 0; x < SCREEN_X; ++x)
-            gpu->screen[SCREEN_X][SCREEN_Y] = 0;
+            gpu->screen[x][y] = 0;
 }
 
 // struct GPU -> None

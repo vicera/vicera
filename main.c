@@ -246,6 +246,9 @@ int main(int argc, char **argv)
     console.pc = 0x0000;
     for (i = 0; (c=fgetc(rom)) != EOF; ++i)
         console.memory[i] = c;
+    
+    // If debuglevel is Disasm, Disassemble the program then
+    // exit.
     if (DEBUGLEVEL == DB_DA)
     {
         logging_log("main.c (DEBUG)", "DEBUG DISASM");
@@ -253,11 +256,18 @@ int main(int argc, char **argv)
             console.pc = disasm_instruction(&console, console.pc);
         exit(0);
     }
+
     // The CPU and GPU are running seperately
     // in 2 thread. On each screen refresh,
     // the GPU will increment &FFF0 in the RAM
     pthread_t ct;
     pthread_create(&ct, NULL, gpu_rendering, NULL);
+    
+    // If the fifo extension is enabled on build time,
+    // do this things.
+    //
+    // NOTE: FIFO is not enabled by default because it is
+    //       an experimental feature.
     #if FIFOEXT
     if (!mkfifo(fifoname, 0666))
     {
@@ -279,24 +289,23 @@ int main(int argc, char **argv)
         switch (DEBUGLEVEL)
         {
             case DB_JMP:
-                willjmp = true;
+                if (console.memory[console.pc] >= JP_NN &&
+                    console.memory[console.pc] <= CALL_P)
+                    willjmp = true;
                 break;
             case DB_FULL:
                 disasm_instruction(&console, console.pc);
                 break;
             default:
-                if (console.memory[console.pc++] == DBG)
-                    disasm_line(&console, console.pc, 5);
+                if (console.memory[console.pc] == DBG)
+                    disasm_line(&console, ++console.pc, 5);
         }
+        
         execute(&console);
+        ++console.pc;
 
         if (willjmp)
-        {
-            if (console.memory[console.pc] >= JP_NN &&
-                console.memory[console.pc] <= CALL_P)
-                disasm_line(&console, console.pc, 5);
-        }
-        ++console.pc;
+            disasm_line(&console, console.pc, 5);
     }
     console.running = false;
     done = true;
