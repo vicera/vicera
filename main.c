@@ -22,6 +22,7 @@
 #include "logging.h"
 #include "sdl_gpu.h"
 #include "config.h"
+#include "debug.h"
 
 #if FIFOEXT
 #include <signal.h>
@@ -41,11 +42,14 @@
 #define USAGE   "Usage: vicera [OPTION]..." \
                 "\nFantasy Console inspired by the Gameboy." \
                 "\n" \
-                "\n     -r, --rom       Target ROM file to be run" \
-                "\n     -s, --start-at  Begin emulation at 0xXXXX" \
-                "\n     -c, --config    Load config file" \
-                "\n     -v, --version   Version of the VICERA" \
-                "\n     -h, --help      Print this help and exit" \
+                "\n     -r, --rom           Target ROM file to be run" \
+                "\n     -s, --start-at      Begin emulation at 0xXXXX" \
+                "\n     -c, --config        Load config file" \
+                "\n     -j, --debug-on-jump Disasm on jump instruction" \
+                "\n     -d, --debug         Disassemble every ran instr." \
+                "\n     -D, --disasm        Disassemble the ROM" \
+                "\n     -v, --version       Version of the VICERA" \
+                "\n     -h, --help          Print this help and exit" \
                 "\n" \
                 "\nLicensed under MIT License." \
                 "\nThis is free software, you are free and change and redistribute it." \
@@ -55,6 +59,11 @@ struct CPU console;
 struct GPU console_gpu;
 struct Controller console_ctrl;
 struct SDL_GPUState console_gpu_state;
+
+#define DB_JMP  1   // Debug on jump
+#define DB_FULL 2   // Full debug
+#define DB_DA   3   // Disassembly
+int DEBUGLEVEL = 0;
 char* fifoname = NULL;
 bool fifo_enabled = false;
 
@@ -64,6 +73,9 @@ static struct option long_options[] = {
     {"start-at", required_argument, NULL, 's'},
     {"config",   required_argument, NULL, 'c'},
     {"force",    no_argument,       NULL, 'f'},
+    {"debug-on-jump", no_argument,  NULL, 'j'},
+    {"debug",    no_argument,       NULL, 'd'},
+    {"disasm",   no_argument,       NULL, 'D'},
     {"version",  no_argument,       NULL, 'v'},
     {"help",     no_argument,       NULL, 'h'}
 };
@@ -144,7 +156,7 @@ void pass_arguments(int argc, char **argv)
 {
     int c;
 
-    while ((c = getopt_long(argc, argv, "r:s:c:vh", long_options, NULL)) != -1)
+    while ((c = getopt_long(argc, argv, "r:s:c:jDdvh", long_options, NULL)) != -1)
         switch (c)
         {
             case 'r':
@@ -165,6 +177,17 @@ void pass_arguments(int argc, char **argv)
                 print_usage();
                 exit(0);
                 break;
+
+            case 'j':
+                DEBUGLEVEL = DB_JMP;
+                break;
+            case 'd':
+                DEBUGLEVEL = DB_FULL;
+                break;
+            case 'D':
+                DEBUGLEVEL = DB_DA;
+                break;
+
             default:
             case '?':
                 print_usage();
@@ -211,7 +234,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    int c;
+    int i, c;
     done = false;
 
     // Init CPU and GPU structs
@@ -221,9 +244,15 @@ int main(int argc, char **argv)
 
     // Transfer the ROM Data into the system memory
     console.pc = 0x0000;
-    for (int i = 0; (c=fgetc(rom)) != EOF; ++i)
+    for (i = 0; (c=fgetc(rom)) != EOF; ++i)
         console.memory[i] = c;
-    
+    if (DEBUGLEVEL == DB_DA)
+    {
+        logging_log("main.c (DEBUG)", "DEBUG DISASM");
+        for (console.pc = 0; console.pc < i; ++console.pc)
+            console.pc = disasm_instruction(&console, console.pc);
+        exit(0);
+    }
     // The CPU and GPU are running seperately
     // in 2 thread. On each screen refresh,
     // the GPU will increment &FFF0 in the RAM
@@ -241,7 +270,34 @@ int main(int argc, char **argv)
     while (!console_gpu_state.ready);
 
     // Running the CPU
-    run(&console);
+    console.running = true;
+    logging_log("main.c (CPU)", "Beginning code execution.");
+    bool willjmp = false;
+    while (console.running)
+    {
+        willjmp = false;
+        switch (DEBUGLEVEL)
+        {
+            case DB_JMP:
+                willjmp = true;
+                break;
+            case DB_FULL:
+                disasm_instruction(&console, console.pc);
+                break;
+            default:
+                if (console.memory[console.pc++] == DBG)
+                    disasm_line(&console, console.pc, 5);
+        }
+        execute(&console);
+
+        if (willjmp)
+        {
+            if (console.memory[console.pc] >= JP_NN &&
+                console.memory[console.pc] <= CALL_P)
+                disasm_line(&console, console.pc, 5);
+        }
+        ++console.pc;
+    }
     console.running = false;
     done = true;
     

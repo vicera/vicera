@@ -143,9 +143,8 @@ typedef enum {
     // SWAP HL, rr
     SWAP_HL, SWAP_BC, SWAP_DE,
 
-    // RepXX
-    // TODO: Implement the REP commands
-    REPZ, REPNZ, REPC, REPNC
+    // Debugging shit
+    DBG
 } Instructions;
 
 // Registers

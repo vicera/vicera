@@ -1013,7 +1013,7 @@ void execute(struct CPU *cpu)
         case SWAP_DE:
             swap_rr(cpu, instr - SWAP_HL + REG_HL);
             break;
-
+        
         default:
             printf("Halting at 0x%04x...\n", cpu->pc);
             halt(cpu, "Invalid opcode! Stopping...");
