@@ -739,7 +739,7 @@ void execute(struct CPU *cpu)
             mov_rr(cpu, REG_HL, instr - MOV_PA);
             break;
         case MOV_PN:
-            mov_rr(cpu, REG_HL, cpu->memory[++(cpu->pc)]);
+            mov_rn(cpu, REG_HL, cpu->memory[++(cpu->pc)]);
             break;
 
         case MOV_SPNN:
