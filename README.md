@@ -7,6 +7,13 @@ controller as the Gameboy and a Monochrome 160x160 display.
 The SPU hasn't even been planned yet so stay tuned. I'll tell more here if ever
 I start implementing the SPU.
 
+## Blog articles
+
+Here are some blog articles I have wrote about the VICERA!
+
+ - [End of the VICERA :pensive:](https://h3liu.ml/b/end_of_vicera.html)
+ - [New Project: The VICERA Fantasy Console!](https://h3liu.ml/b/vicera_part1.html)
+
 ## Checklist of the current development
 
 Here is the checklist :
