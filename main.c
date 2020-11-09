@@ -33,7 +33,7 @@
 #endif
 
 // Version of the software
-#define VERSION "devbuild"
+#define VERSION "1.0.0 Release"
 
 // Filename for logging
 #define FNAME "main.c"
