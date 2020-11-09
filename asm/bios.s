@@ -128,7 +128,7 @@ MainLoop:
 		jn MainLoop_E
 		halt
 	MainLoop_B:
-		sub 2
+		sub a, 2
 		mov (0xfff2), A
 		jp MainLoop_E
 

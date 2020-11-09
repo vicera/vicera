@@ -26,7 +26,7 @@ X Add new opcodes (16-bits addressing)
    X Buttons
    X RAM Access
  X Implement Controller
- / Write an assembler
+ X Write an assembler
  . SPU
    X Design
    X Implementation
@@ -37,8 +37,3 @@ X Add new opcodes (16-bits addressing)
  X Command-line arguments
     X Designing arguments
     X Implementation
- - FIFO extension
-    - FIFO communication between 3rd party software and VICERA
-    - Parsing
-    - Executing FIFO request
-    - Send answer
