@@ -1,18 +1,24 @@
-FILES = main.c cpu.c gpu.c logging.c spu.c sdl_gpu.c config.c debug.c
-FIFO_EXT = fifo.c
-ARGS = -Wall -Wextra -pedantic
-LIBS = -lSDL2 -lpthread
+#
+# VICERA by h34ting4ppliance
+#
+# Makefile
+#
+FILES = main.o cpu.o gpu.o logging.o spu.o sdl_gpu.o config.o debug.o
+CFLAGS = -c
+LFLAGS = -lSDL2 -lpthread
+
 EXECNAME = vicera
 CC = gcc
+LD = gcc
+
+.PHONY: clean
 
 # The VICERA console itself
-vicera: $(FILES)
-		$(CC) $(FILES) $(ARGS) $(LIBS) -o $(EXECNAME)
+$(EXECNAME): $(FILES)
+		$(LD) $(LFLAGS) $(FILES) -p -o $(EXECNAME)
 
-# The VICERA with the FIFO extension
-fifo: $(FILES) $(FIFO_EXT)
-		$(CC) $(FILES) $(FIFO_EXT) $(ARGS) $(LIBS) -DFIFOEXT -o $(EXECNAME)
+%.o: %.c
+	$(CC) $< $(CFLAGS) -o $@
 
-# CPU Tests (outdated)
-test: cpu.c logging.c tests.c
-		$(CC) cpu.c logging.c tests.c -lcmocka -o vicera-testing
+clean:
+	rm -f $(FILES) $(EXECNAME)
