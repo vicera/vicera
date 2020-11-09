@@ -6,5 +6,6 @@ vicera
 
 *.rom
 *.cfg
+*.o
 
 testing/*
