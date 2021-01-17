@@ -11,8 +11,8 @@ I start implementing the SPU.
 
 Here are some blog articles I have wrote about the VICERA!
 
- - [End of the VICERA :pensive:](https://h3liu.ml/b/end_of_vicera.html)
- - [New Project: The VICERA Fantasy Console!](https://h3liu.ml/b/vicera_part1.html)
+ - [End of the VICERA :pensive:](https://cutebunni.es/b/end_of_vicera.html)
+ - [New Project: The VICERA Fantasy Console!](https://cutebunni.es/b/vicera_part1.html)
 
 ## Checklist of the current development
 
