@@ -1,5 +1,9 @@
 ![Vicera Logo](https://github.com/h34ting4ppliance/vicera/raw/master/vicera.png)
 
+# THE VICERA HAS MOVED TO [CODEBERG](https://codeberg.org/vicera). NO MORE UPDATE HERE.
+# THE VICERA HAS MOVED TO [CODEBERG](https://codeberg.org/vicera). NO MORE UPDATE HERE.
+# THE VICERA HAS MOVED TO [CODEBERG](https://codeberg.org/vicera). NO MORE UPDATE HERE.
+
 **VICERA** is a fantasy console written in C heavily inspired by the Gameboy. 
 It features it's very own CPU architecture, Tiles and Sprites, the same 
 controller as the Gameboy and a Monochrome 160x160 display.
